@@ -24,3 +24,6 @@
 - Do not commit generated `.uf2` files. Keep a known-good recovery UF2 outside
   the repository.
 - Do not use `nrf52840-nosd` snippets or raise the RGB brightness safety limit.
+- Build a prerelease candidate, use the macOS guided installer, and complete
+  the physical smoke test before promoting any final release. Promotion must
+  reuse the candidate asset rather than rebuild it.

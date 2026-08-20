@@ -1,0 +1,99 @@
+name: Prepare Beckon firmware candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Final release tag matching beckon/manifest.toml (for example v0.1.0)"
+        required: true
+        type: string
+      candidate_tag:
+        description: "Candidate tag (for example v0.1.0-rc.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/zmkfirmware/zmk-build-arm:3.5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: beckon/main
+      - name: Restore West dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            modules
+            tools
+            zephyr
+            bootloader
+          key: ${{ runner.os }}-beckon-west-${{ hashFiles('app/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-beckon-west-
+          timeout-minutes: 2
+          continue-on-error: true
+      - name: Initialize upstream build workspace
+        run: |
+          west init -l app
+          west update --fetch-opt=--filter=tree:0
+          west zephyr-export
+      - name: Build, check, and prepare candidate assets
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+        run: |
+          version=$(sed -n 's/^firmware_version = "\(.*\)"$/\1/p' beckon/manifest.toml)
+          test "v${version}" = "$RELEASE_TAG"
+          case "$CANDIDATE_TAG" in "$RELEASE_TAG"-rc.*) ;; *) exit 2 ;; esac
+          west build -s app -d build/beckon-lh -b glove80_lh -- \
+            -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
+            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/lh-build.log
+          west build -s app -d build/beckon-rh -b glove80_rh -- \
+            -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
+            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/rh-build.log
+          cat build/beckon-lh/zephyr/zmk.uf2 build/beckon-rh/zephyr/zmk.uf2 > beckon/beckon.uf2
+          cat beckon/lh-build.log beckon/rh-build.log > beckon/build.log
+          ./beckon/tests/test-checks.sh
+          ./beckon/tests/check-memory.sh beckon/build.log
+          (cd beckon && sha256sum beckon.uf2 > SHA256SUMS)
+          printf '{\n  "release_tag": "%s",\n  "candidate_tag": "%s",\n  "commit": "%s"\n}\n' \
+            "$RELEASE_TAG" "$CANDIDATE_TAG" "$(git rev-parse HEAD)" > beckon/candidate.json
+          cp beckon/release/smoke-test.md beckon/SMOKE-TEST.md
+      - uses: actions/upload-artifact@v7
+        with:
+          name: beckon-candidate
+          path: |
+            beckon/beckon.uf2
+            beckon/SHA256SUMS
+            beckon/candidate.json
+            beckon/SMOKE-TEST.md
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: beckon/main
+          fetch-depth: 0
+      - uses: actions/download-artifact@v8
+        with:
+          name: beckon-candidate
+          path: candidate
+      - name: Create candidate prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+        run: |
+          commit=$(jq -r .commit candidate/candidate.json)
+          git tag "$CANDIDATE_TAG" "$commit"
+          git push origin "$CANDIDATE_TAG"
+          gh release create "$CANDIDATE_TAG" \
+            candidate/beckon.uf2 candidate/SHA256SUMS candidate/candidate.json candidate/SMOKE-TEST.md \
+            --title "Beckon $CANDIDATE_TAG" \
+            --prerelease \
+            --notes "Candidate only. Flash and complete SMOKE-TEST.md before promotion."

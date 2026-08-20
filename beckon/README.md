@@ -14,10 +14,10 @@ not be committed.
 The persistent `Beckon` layer is layer 4. The key beside Magic toggles Base and
 Beckon. On the Beckon layer the F-row emits these hotkeys:
 
-| Physical key | Host key |
-| --- | --- |
-| F1–F5 | F16–F20 |
-| F6–F10 | Shift+F16–Shift+F20 |
+| Physical key | Host key            |
+| ------------ | ------------------- |
+| F1–F5        | F16–F20             |
+| F6–F10       | Shift+F16–Shift+F20 |
 
 The mapping avoids macOS's built-in F1–F15 display/media handling.
 
@@ -65,11 +65,39 @@ An invalid ordinary ZMK image is recoverable using the Glove80 bootloader
 power-up combo. Keep a known-good Layout Editor UF2 outside this repository.
 Do not use `nrf52840-nosd` snippets or change the RGB brightness safety limit.
 
-Creating a GitHub release is intentionally manual: bump `firmware_version` in
-`beckon/manifest.toml`, build in CI, perform a wired physical smoke test on both
-halves, then run the **Release Beckon firmware** workflow with that exact tag.
-It creates a release and attaches the tested combined UF2; it never flashes a
-keyboard.
+## Candidate, flash, and promote
+
+The release path deliberately separates a build from a physical test:
+
+1. Bump `firmware_version` in `beckon/manifest.toml` to the intended final
+   version, commit it, and let normal CI pass.
+2. Run **Prepare Beckon firmware candidate** with `vX.Y.Z` and
+   `vX.Y.Z-rc.1`. It builds, tests, and publishes a prerelease containing the
+   combined UF2, SHA-256 checksum, source commit, and smoke-test checklist.
+3. On macOS, run:
+
+   ```sh
+   ./beckon/scripts/install-candidate-macos.sh --candidate vX.Y.Z-rc.1
+   ```
+
+   The installer downloads the candidate, validates its SHA-256, guides the
+   right half then left half into the reliable power-up bootloader mode, waits
+   for `GLV80RHBOOT` and `GLV80LHBOOT`, and copies a short `BECKON.UF2`
+   filename. An automatic bootloader-volume eject is treated as success even
+   if macOS reports a late copy error. Use `--dry-run` to download and verify
+   without touching the keyboard.
+
+4. Complete the printed physical smoke test. The helper cannot prove that the
+   keyboard has booted the new image; this is intentionally a human check.
+5. Run **Promote Beckon firmware candidate** with the tested candidate tag,
+   final tag, and physical-test confirmation. It verifies the candidate asset
+   and metadata, then publishes the exact tested UF2 without rebuilding.
+
+The installer never factory-resets or enters bootloader mode on your behalf.
+MoErgo recommends its power-up bootloader mode because it works even with a
+bad ZMK image or disconnected halves. Keep a known-good Layout Editor UF2
+outside the repository. Do not use `nrf52840-nosd` snippets or change the RGB
+brightness safety limit.
 
 ## Upstream updates
 

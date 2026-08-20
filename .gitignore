@@ -6,6 +6,14 @@
 /zmk-config
 /build
 
+# Beckon firmware outputs. A known-good UF2 is kept separately as recovery
+# media, never as versioned source.
+/beckon/build
+/beckon/build.log
+/beckon/glove80.uf2
+/beckon/lh-build.log
+/beckon/rh-build.log
+
 # macOS
 *.DS_Store
 

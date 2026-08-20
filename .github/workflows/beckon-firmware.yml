@@ -1,0 +1,57 @@
+name: Beckon firmware
+
+on:
+  push:
+    branches: [beckon/main]
+    paths:
+      - 'beckon/**'
+      - 'app/**'
+      - 'nix/**'
+      - 'default.nix'
+      - '.github/workflows/beckon-firmware.yml'
+  pull_request:
+    branches: [beckon/main]
+    paths:
+      - 'beckon/**'
+      - 'app/**'
+      - 'nix/**'
+      - 'default.nix'
+      - '.github/workflows/beckon-firmware.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/zmkfirmware/zmk-build-arm:3.5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize upstream build workspace
+        run: |
+          west init -l app
+          west update --fetch-opt=--filter=tree:0
+          west zephyr-export
+      - name: Build both halves and combine UF2
+        run: |
+          west build -s app -d build/beckon-lh -b glove80_lh -- \
+            -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
+            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/lh-build.log
+          west build -s app -d build/beckon-rh -b glove80_rh -- \
+            -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
+            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/rh-build.log
+          cat build/beckon-lh/zephyr/zmk.uf2 build/beckon-rh/zephyr/zmk.uf2 > beckon/glove80.uf2
+          cat beckon/lh-build.log beckon/rh-build.log > beckon/build.log
+      - name: Check Beckon keymap
+        run: ./beckon/tests/test-checks.sh
+      - name: Check memory guardrails
+        run: ./beckon/tests/check-memory.sh beckon/build.log
+      - name: Upload combined firmware and build log
+        uses: actions/upload-artifact@v4
+        with:
+          name: beckon-glove80-uf2
+          path: |
+            beckon/glove80.uf2
+            beckon/build.log

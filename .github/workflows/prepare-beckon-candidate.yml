@@ -21,9 +21,22 @@ jobs:
     container:
       image: docker.io/zmkfirmware/zmk-build-arm:3.5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: beckon/main
+      - name: Restore West dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            modules
+            tools
+            zephyr
+            bootloader
+          key: ${{ runner.os }}-beckon-west-${{ hashFiles('app/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-beckon-west-
+          timeout-minutes: 2
+          continue-on-error: true
       - name: Initialize upstream build workspace
         run: |
           west init -l app
@@ -51,7 +64,7 @@ jobs:
           printf '{\n  "release_tag": "%s",\n  "candidate_tag": "%s",\n  "commit": "%s"\n}\n' \
             "$RELEASE_TAG" "$CANDIDATE_TAG" "$(git rev-parse HEAD)" > beckon/candidate.json
           cp beckon/release/smoke-test.md beckon/SMOKE-TEST.md
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: beckon-candidate
           path: |
@@ -63,11 +76,11 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: beckon/main
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: beckon-candidate
           path: candidate

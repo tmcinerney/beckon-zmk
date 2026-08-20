@@ -22,13 +22,30 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: beckon-firmware-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     container:
       image: docker.io/zmkfirmware/zmk-build-arm:3.5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - name: Restore West dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            modules
+            tools
+            zephyr
+            bootloader
+          key: ${{ runner.os }}-beckon-west-${{ hashFiles('app/west.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-beckon-west-
+          timeout-minutes: 2
+          continue-on-error: true
       - name: Initialize upstream build workspace
         run: |
           west init -l app
@@ -49,9 +66,10 @@ jobs:
       - name: Check memory guardrails
         run: ./beckon/tests/check-memory.sh beckon/build.log
       - name: Upload combined firmware and build log
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: beckon-glove80-uf2
           path: |
             beckon/glove80.uf2
             beckon/build.log
+          retention-days: 14

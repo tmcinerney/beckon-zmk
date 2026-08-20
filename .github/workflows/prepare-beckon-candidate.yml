@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Final release tag matching beckon/manifest.toml (for example v0.1.0)"
+        description: "Final release tag (for example v0.1.0)"
         required: true
         type: string
       candidate_tag:
@@ -44,12 +44,11 @@ jobs:
           west zephyr-export
       - name: Build, check, and prepare candidate assets
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
-          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+        RELEASE_TAG: ${{ inputs.release_tag }}
+        CANDIDATE_TAG: ${{ inputs.candidate_tag }}
         run: |
-          version=$(sed -n 's/^firmware_version = "\(.*\)"$/\1/p' beckon/manifest.toml)
-          test "v${version}" = "$RELEASE_TAG"
-          case "$CANDIDATE_TAG" in "$RELEASE_TAG"-rc.*) ;; *) exit 2 ;; esac
+          case "$RELEASE_TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) exit 2 ;; esac
+          case "$CANDIDATE_TAG" in "$RELEASE_TAG"-rc.[0-9]*) ;; *) exit 2 ;; esac
           west build -s app -d build/beckon-lh -b glove80_lh -- \
             -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
             -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/lh-build.log

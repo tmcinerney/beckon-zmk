@@ -69,8 +69,9 @@ Do not use `nrf52840-nosd` snippets or change the RGB brightness safety limit.
 
 The release path deliberately separates a build from a physical test:
 
-1. Bump `firmware_version` in `beckon/manifest.toml` to the intended final
-   version, commit it, and let normal CI pass.
+1. Choose the intended final tag, `vX.Y.Z`. The candidate metadata records
+   that tag and the exact source commit, so no version-only source commit is
+   needed.
 2. Run **Prepare Beckon firmware candidate** with `vX.Y.Z` and
    `vX.Y.Z-rc.1`. It builds, tests, and publishes a prerelease containing the
    combined UF2, SHA-256 checksum, source commit, and smoke-test checklist.

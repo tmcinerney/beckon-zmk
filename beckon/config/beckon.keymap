@@ -66,6 +66,7 @@
 #define LAYER_Magic 2
 #define LAYER_Factory 3
 #define LAYER_Beckon 4
+#define LAYER_BeckonMagic 5
 
 /* To deal with the situation where there is no Lower layer, to keep &lower happy */
 #ifndef LAYER_Lower
@@ -383,7 +384,20 @@
               &kp TAB           &kp Q    &kp W     &kp E      &kp R   &kp T                                                                  &kp Y        &kp U        &kp I        &kp O        &kp P     &kp BSLH
               &kp ESC           &kp A    &kp S     &kp D      &kp F   &kp G                                                                  &kp H        &kp J        &kp K        &kp L     &kp SEMI      &kp SQT
             &kp GRAVE           &kp Z    &kp X     &kp C      &kp V   &kp B  &kp LSHFT  &kp LGUI    &lower  &kp LCTRL  &kp RGUI  &kp RSHFT   &kp N        &kp M    &kp COMMA      &kp DOT     &kp FSLH    &kp PG_UP
- &magic LAYER_Magic 0  &to LAYER_Base  &kp END  &kp LEFT  &kp RIGHT           &kp BSPC   &kp DEL  &kp LALT   &kp RALT   &kp RET  &kp SPACE               &kp UP     &kp DOWN     &kp LBKT     &kp RBKT    &kp PG_DN
+ &magic LAYER_BeckonMagic 0  &to LAYER_Base  &kp END  &kp LEFT  &kp RIGHT           &kp BSPC   &kp DEL  &kp LALT   &kp RALT   &kp RET  &kp SPACE               &kp UP     &kp DOWN     &kp LBKT     &kp RBKT    &kp PG_DN
+            >;
+        };
+
+        // AIDEV-NOTE: This overlay must outrank Beckon or Beckon's normal
+        // bindings mask Magic controls such as RGB_TOG.
+        layer_BeckonMagic {
+            bindings = <
+  &bt BT_CLR            &none            &none            &none            &none                                                                                  &none   &none   &none   &none     &bt BT_CLR_ALL
+       &none            &none            &none            &none            &none            &none                                                         &none   &none   &none   &none   &none              &none
+       &none  &rgb_ug RGB_SPI  &rgb_ug RGB_SAI  &rgb_ug RGB_HUI  &rgb_ug RGB_BRI  &rgb_ug RGB_TOG                                                         &none   &none   &none   &none   &none              &none
+ &bootloader  &rgb_ug RGB_SPD  &rgb_ug RGB_SAD  &rgb_ug RGB_HUD  &rgb_ug RGB_BRD  &rgb_ug RGB_EFF                                                         &none   &none   &none   &none   &none        &bootloader
+  &sys_reset            &none            &none            &none            &none            &none   &bt_2   &bt_3         &none   &none   &none   &none   &none   &none   &none   &none         &sys_reset
+       &none            &none            &none            &none            &none                    &bt_0   &bt_1  &out OUT_USB   &none   &none   &none           &none   &none   &none   &none  &to LAYER_Factory
             >;
         };
 

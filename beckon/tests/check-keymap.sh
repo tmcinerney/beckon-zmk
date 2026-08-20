@@ -11,9 +11,12 @@ require() {
 }
 
 require '#define LAYER_Beckon 4'
+require '#define LAYER_BeckonMagic 5'
 require '&kp F16         &kp F17  &kp F18   &kp F19    &kp F20'
 require '&kp LS(F16)  &kp LS(F17)  &kp LS(F18)  &kp LS(F19)  &kp LS(F20)'
 require '&to LAYER_Beckon'
 require '&to LAYER_Base'
+require '&magic LAYER_BeckonMagic 0'
+require 'layer_BeckonMagic {'
 
 echo "Beckon keymap invariants passed: $keymap"

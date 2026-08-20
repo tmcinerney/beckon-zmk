@@ -12,7 +12,9 @@ not be committed.
 ## Current Beckon layer
 
 The persistent `Beckon` layer is layer 4. The key beside Magic toggles Base and
-Beckon. On the Beckon layer the F-row emits these hotkeys:
+Beckon. Holding Magic from Beckon activates a private priority-5 overlay so
+Magic controls, including RGB, remain available. On the Beckon layer the F-row
+emits these hotkeys:
 
 | Physical key | Host key            |
 | ------------ | ------------------- |

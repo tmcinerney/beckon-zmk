@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Final release tag matching the candidate metadata (for example v0.1.0)'
+        description: "Final release tag matching the candidate metadata (for example v0.1.0)"
         required: true
         type: string
       candidate_tag:
-        description: 'Tested candidate tag (for example v0.1.0-rc.1)'
+        description: "Tested candidate tag (for example v0.1.0-rc.1)"
         required: true
         type: string
       physical_smoke_tested:
-        description: 'I flashed both halves and completed the physical smoke test'
+        description: "I flashed both halves and completed the physical smoke test"
         required: true
         type: boolean
 

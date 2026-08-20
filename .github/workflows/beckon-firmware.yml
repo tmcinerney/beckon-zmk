@@ -4,19 +4,19 @@ on:
   push:
     branches: [beckon/main]
     paths:
-      - 'beckon/**'
-      - 'app/**'
-      - 'nix/**'
-      - 'default.nix'
-      - '.github/workflows/beckon-firmware.yml'
+      - "beckon/**"
+      - "app/**"
+      - "nix/**"
+      - "default.nix"
+      - ".github/workflows/beckon-firmware.yml"
   pull_request:
     branches: [beckon/main]
     paths:
-      - 'beckon/**'
-      - 'app/**'
-      - 'nix/**'
-      - 'default.nix'
-      - '.github/workflows/beckon-firmware.yml'
+      - "beckon/**"
+      - "app/**"
+      - "nix/**"
+      - "default.nix"
+      - ".github/workflows/beckon-firmware.yml"
   workflow_dispatch:
 
 permissions:

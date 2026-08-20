@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Final release tag matching beckon/manifest.toml (for example v0.1.0)'
+        description: "Final release tag matching beckon/manifest.toml (for example v0.1.0)"
         required: true
         type: string
       candidate_tag:
-        description: 'Candidate tag (for example v0.1.0-rc.1)'
+        description: "Candidate tag (for example v0.1.0-rc.1)"
         required: true
         type: string
 

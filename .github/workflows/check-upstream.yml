@@ -2,7 +2,7 @@ name: Check MoErgo upstream
 
 on:
   schedule:
-    - cron: '23 16 * * 1'
+    - cron: "23 16 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -27,8 +27,8 @@ jobs:
         with:
           branch: automation/sync-moergo-upstream
           delete-branch: true
-          title: 'chore: sync MoErgo upstream'
-          commit-message: 'chore: sync MoErgo upstream'
+          title: "chore: sync MoErgo upstream"
+          commit-message: "chore: sync MoErgo upstream"
           body: |
             Automated fast-forward of the upstream mirror. Merge this first,
             then rebase `beckon/main`, run firmware CI, and physically test

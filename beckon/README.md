@@ -14,10 +14,10 @@ not be committed.
 The persistent `Beckon` layer is layer 4. The key beside Magic toggles Base and
 Beckon. On the Beckon layer the F-row emits these hotkeys:
 
-| Physical key | Host key |
-| --- | --- |
-| F1–F5 | F16–F20 |
-| F6–F10 | Shift+F16–Shift+F20 |
+| Physical key | Host key            |
+| ------------ | ------------------- |
+| F1–F5        | F16–F20             |
+| F6–F10       | Shift+F16–Shift+F20 |
 
 The mapping avoids macOS's built-in F1–F15 display/media handling.
 
@@ -86,6 +86,7 @@ The release path deliberately separates a build from a physical test:
    filename. An automatic bootloader-volume eject is treated as success even
    if macOS reports a late copy error. Use `--dry-run` to download and verify
    without touching the keyboard.
+
 4. Complete the printed physical smoke test. The helper cannot prove that the
    keyboard has booted the new image; this is intentionally a human check.
 5. Run **Promote Beckon firmware candidate** with the tested candidate tag,

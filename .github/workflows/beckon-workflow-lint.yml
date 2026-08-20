@@ -6,13 +6,17 @@ on:
     paths:
       - ".github/workflows/beckon-*.yml"
       - ".github/workflows/check-upstream.yml"
+      - ".github/workflows/prepare-beckon-candidate.yml"
       - ".github/workflows/pre-commit.yml"
+      - ".github/workflows/release-beckon.yml"
   push:
     branches: [beckon/main]
     paths:
       - ".github/workflows/beckon-*.yml"
       - ".github/workflows/check-upstream.yml"
+      - ".github/workflows/prepare-beckon-candidate.yml"
       - ".github/workflows/pre-commit.yml"
+      - ".github/workflows/release-beckon.yml"
 
 permissions:
   contents: read

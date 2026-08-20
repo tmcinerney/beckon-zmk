@@ -27,7 +27,9 @@ jobs:
       - name: Record candidate source commit
         id: source
         run: |
-          commit=$(git -C "$GITHUB_WORKSPACE" rev-parse --verify "HEAD^{commit}")
+          commit="$GITHUB_SHA"
+          test "${#commit}" = 40
+          case "$commit" in *[!0-9a-f]*) exit 2 ;; esac
           printf 'commit=%s\n' "$commit" >> "$GITHUB_OUTPUT"
       - name: Restore West dependencies
         uses: actions/cache@v6
@@ -55,7 +57,8 @@ jobs:
         run: |
           case "$RELEASE_TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) exit 2 ;; esac
           case "$CANDIDATE_TAG" in "$RELEASE_TAG"-rc.[0-9]*) ;; *) exit 2 ;; esac
-          git -C "$GITHUB_WORKSPACE" rev-parse --verify "${SOURCE_COMMIT}^{commit}" >/dev/null
+          test "${#SOURCE_COMMIT}" = 40
+          case "$SOURCE_COMMIT" in *[!0-9a-f]*) exit 2 ;; esac
           west build -s app -d build/beckon-lh -b glove80_lh -- \
             -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
             -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/lh-build.log

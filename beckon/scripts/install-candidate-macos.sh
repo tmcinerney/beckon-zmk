@@ -4,7 +4,7 @@ set -euo pipefail
 repo="tmcinerney/beckon-zmk"
 candidate=""
 dry_run=false
-volumes_root="/Volumes"
+volumes_root="${BECKON_VOLUMES_ROOT:-/Volumes}"
 
 usage() {
   cat <<'EOF'
@@ -81,7 +81,9 @@ wait_for_bootloader() {
 }
 
 flash_half() {
-  local hand="$1" volume="$2" mount="$volumes_root/$volume"
+  local hand="$1"
+  local volume="$2"
+  local mount="$volumes_root/$volume"
   local copy_status=0
 
   echo "Copying verified firmware to $hand ($volume)..."

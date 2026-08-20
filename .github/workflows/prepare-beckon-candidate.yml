@@ -44,8 +44,8 @@ jobs:
           west zephyr-export
       - name: Build, check, and prepare candidate assets
         env:
-        RELEASE_TAG: ${{ inputs.release_tag }}
-        CANDIDATE_TAG: ${{ inputs.candidate_tag }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          CANDIDATE_TAG: ${{ inputs.candidate_tag }}
         run: |
           case "$RELEASE_TAG" in v[0-9]*.[0-9]*.[0-9]*) ;; *) exit 2 ;; esac
           case "$CANDIDATE_TAG" in "$RELEASE_TAG"-rc.[0-9]*) ;; *) exit 2 ;; esac

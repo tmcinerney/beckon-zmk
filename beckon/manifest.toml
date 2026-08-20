@@ -1,5 +1,4 @@
 [beckon]
-firmware_version = "0.1.0-dev"
 protocol_version = 1
 
 [upstream]

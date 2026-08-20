@@ -44,8 +44,8 @@ jobs:
           key: ${{ runner.os }}-beckon-west-${{ hashFiles('app/west.yml') }}
           restore-keys: |
             ${{ runner.os }}-beckon-west-
-          timeout-minutes: 2
-          continue-on-error: true
+        timeout-minutes: 2
+        continue-on-error: true
       - name: Initialize upstream build workspace
         run: |
           west init -l app

@@ -9,7 +9,8 @@ test_root=$(mktemp -d)
 trap 'rm -rf "$test_root"' EXIT
 mock_bin="$test_root/bin"
 volumes_root="$test_root/volumes"
-mkdir -p "$mock_bin" "$volumes_root/GLV80RHBOOT" "$volumes_root/GLV80LHBOOT"
+flash_work_dir="$test_root/flash-work"
+mkdir -p "$mock_bin" "$flash_work_dir" "$volumes_root/GLV80RHBOOT" "$volumes_root/GLV80LHBOOT"
 touch "$volumes_root/GLV80RHBOOT/INFO_UF2.TXT" "$volumes_root/GLV80LHBOOT/INFO_UF2.TXT"
 
 write_mock() {
@@ -20,6 +21,7 @@ write_mock() {
 }
 
 write_mock uname 'printf "Darwin\\n"'
+write_mock mktemp 'printf "%s\\n" "$BECKON_TEST_FLASH_DIR"'
 write_mock gh '
 destination=""
 while (($#)); do
@@ -42,7 +44,7 @@ rm -rf "$(dirname "$destination")"
 write_mock sync ':'
 write_mock sleep ':'
 
-output=$(printf '\n\n' | env PATH="$mock_bin:$PATH" BECKON_VOLUMES_ROOT="$volumes_root" \
+output=$(printf '\n\n' | env PATH="$mock_bin:$PATH" BECKON_TEST_FLASH_DIR="$flash_work_dir" BECKON_VOLUMES_ROOT="$volumes_root" \
   ./beckon/scripts/install-candidate-macos.sh --candidate test)
 [[ "$output" == *"right bootloader ejected: flash accepted."* ]]
 [[ "$output" == *"left bootloader ejected: flash accepted."* ]]

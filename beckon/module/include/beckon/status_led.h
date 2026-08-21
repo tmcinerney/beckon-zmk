@@ -10,14 +10,22 @@
 #include <beckon/status_transport.h>
 
 /*
- * The Glove80 left board's `pixel-lookup` maps matrix position 0 (F1) to
- * WS2812 strip index 34. Keep this hardware mapping here rather than in the
- * status protocol, which remains keyboard-neutral.
+ * Glove80 F-row LEDs, in Beckon key order on each physical half. The board
+ * DTS remains the wiring source of truth; tests verify these derived values.
  */
 #define BECKON_GLOVE80_LEFT_F1_PIXEL 34
+#define BECKON_GLOVE80_LEFT_F2_PIXEL 28
+#define BECKON_GLOVE80_LEFT_F3_PIXEL 22
+#define BECKON_GLOVE80_LEFT_F4_PIXEL 16
+#define BECKON_GLOVE80_LEFT_F5_PIXEL 10
 
-/* The Glove80 right board's lookup maps matrix position 5 (F6) to strip 10. */
 #define BECKON_GLOVE80_RIGHT_F6_PIXEL 10
+#define BECKON_GLOVE80_RIGHT_F7_PIXEL 16
+#define BECKON_GLOVE80_RIGHT_F8_PIXEL 22
+#define BECKON_GLOVE80_RIGHT_F9_PIXEL 28
+#define BECKON_GLOVE80_RIGHT_F10_PIXEL 34
+
+#define BECKON_STATUS_LED_COUNT_PER_HALF 5
 
 /*
  * Return an RGB override for one declarative agent status. `false` means the

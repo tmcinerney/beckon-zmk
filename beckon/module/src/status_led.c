@@ -14,31 +14,42 @@
 
 #include <zmk/rgb_underglow.h>
 
+#include <string.h>
+
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
-static enum beckon_agent_status current_status = BECKON_AGENT_STATUS_UNBOUND;
+static enum beckon_agent_status current_status[BECKON_STATUS_LED_COUNT_PER_HALF];
 static bool beckon_layer_active;
 
-static void refresh_status_led(void) {
-    uint32_t rgb;
-    int err;
-
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    const uint8_t pixel = BECKON_GLOVE80_LEFT_F1_PIXEL;
+static const uint8_t status_led_pixels[BECKON_STATUS_LED_COUNT_PER_HALF] = {
+    BECKON_GLOVE80_LEFT_F1_PIXEL, BECKON_GLOVE80_LEFT_F2_PIXEL, BECKON_GLOVE80_LEFT_F3_PIXEL,
+    BECKON_GLOVE80_LEFT_F4_PIXEL, BECKON_GLOVE80_LEFT_F5_PIXEL,
+};
+#define BECKON_STATUS_SLOT_OFFSET 0
 #else
-    const uint8_t pixel = BECKON_GLOVE80_RIGHT_F6_PIXEL;
+static const uint8_t status_led_pixels[BECKON_STATUS_LED_COUNT_PER_HALF] = {
+    BECKON_GLOVE80_RIGHT_F6_PIXEL, BECKON_GLOVE80_RIGHT_F7_PIXEL,  BECKON_GLOVE80_RIGHT_F8_PIXEL,
+    BECKON_GLOVE80_RIGHT_F9_PIXEL, BECKON_GLOVE80_RIGHT_F10_PIXEL,
+};
+#define BECKON_STATUS_SLOT_OFFSET 5
 #endif
 
-    if (beckon_status_led_should_render(beckon_layer_active, current_status, &rgb)) {
-        err = zmk_rgb_underglow_override_pixel(pixel, rgb);
-    } else {
-        err = zmk_rgb_underglow_clear_pixel_override(pixel);
-    }
-    if (err) {
-        LOG_WRN("Failed to update Beckon status LED: %d", err);
+static void refresh_status_led(void) {
+    for (size_t index = 0; index < ARRAY_SIZE(status_led_pixels); index++) {
+        uint32_t rgb;
+        int err;
+        if (beckon_status_led_should_render(beckon_layer_active, current_status[index], &rgb)) {
+            err = zmk_rgb_underglow_override_pixel(status_led_pixels[index], rgb);
+        } else {
+            err = zmk_rgb_underglow_clear_pixel_override(status_led_pixels[index]);
+        }
+        if (err) {
+            LOG_WRN("Failed to update Beckon status LED %u: %d", index, err);
+        }
     }
 }
 
@@ -48,11 +59,8 @@ static int beckon_status_led_listener(const zmk_event_t *eh) {
         return ZMK_EV_EVENT_BUBBLE;
     }
 
-#if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
-    current_status = event->snapshot.slots[0];
-#else
-    current_status = event->snapshot.slots[5];
-#endif
+    memcpy(current_status, &event->snapshot.slots[BECKON_STATUS_SLOT_OFFSET],
+           sizeof(current_status));
     refresh_status_led();
 
     return ZMK_EV_EVENT_BUBBLE;

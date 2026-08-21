@@ -63,7 +63,7 @@ The checks deliberately cover different failure modes:
 - `test-status-protocol.sh` exercises the strict, status-only Raw HID frame
   parser outside a device build.
 
-## Status transport and two-key LED proof
+## Status transport and ten-key LED renderer
 
 The left Glove80 half is the USB-connected split central. It exposes a second,
 vendor-defined Raw HID interface used only for a fixed-size status snapshot.
@@ -75,9 +75,9 @@ The firmware receives and validates the frame, then publishes a copied ZMK
 event. The host protocol contains only fixed-size status enums; it cannot alter
 key behavior.
 
-The first display increment deliberately consumes only snapshot slots `f1` and
-`f6`: F1 on the USB-connected left half and F6 on the split peripheral. Each
-overrides its LED with a static status color:
+The display renderer consumes every snapshot slot: F1–F5 on the USB-connected
+left half and F6–F10 on the split peripheral. Each overrides its LED with a
+static status color:
 
 | Agent state | F1 / F6 color     |
 | ----------- | ----------------- |
@@ -88,23 +88,21 @@ overrides its LED with a static status color:
 | unknown     | amber (`#FFB000`) |
 | unbound     | no override       |
 
-This is intentionally not the final ten-key renderer: it has no effects,
-per-key user colors, or animation. The Glove80 board DTS
+This static renderer has no effects, per-key user colors, or animation. The Glove80 board DTS
 owns physical LED wiring. Its `pixel-lookup` maps a WS2812 strip index to a
-matrix position. Generated Beckon keymap position `0` is left F1 and maps to
-left strip pixel `34`; position `5` is right F6 and maps to right strip pixel
-`10`. `check-status-led-mapping.sh` verifies both relationships, so a keymap
-or board mapping change cannot silently move either proof LED.
+matrix position. `check-status-led-mapping.sh` verifies all ten F-row
+relationships, so a keymap or board mapping change cannot silently move an
+indicator.
 
 The override composes over normal per-key layer RGB, respects `RGB_OFF`, and
 yields to Magic's temporary keyboard-status display. Keep RGB enabled when
 performing the physical proof.
 
-After flashing a candidate, enable RGB, send a valid snapshot with slot F1 or
-F6 set to `working`, and confirm the matching key becomes teal. Repeat with
-`blocked` (red), then send `unbound` and confirm that key returns to normal
+After flashing a candidate, enable RGB, send a valid snapshot with selected
+slots set to `working`, and confirm the matching keys become teal. Repeat with
+`blocked` (red), then send `unbound` and confirm each key returns to normal
 layer RGB. Hold Magic to show normal keyboard status, release it, and confirm
-the override returns.
+the overrides return. Switching out of Beckon layer 4 clears all overrides.
 
 The protocol and broader physical acceptance criteria are in
 [transport-protocol.md](transport-protocol.md).

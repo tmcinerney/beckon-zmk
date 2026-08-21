@@ -20,8 +20,8 @@ the right half never exposes Raw HID to the host or over Bluetooth.
 
 Agent state values are `0` unbound, `1` idle, `2` working, `3` blocked, `4`
 done, and `5` unknown. The firmware rejects every malformed or unsupported
-frame. A valid snapshot is copied into a ZMK event for a later RGB renderer;
-this increment intentionally does not modify LEDs.
+frame. A valid snapshot is copied into a ZMK event for the firmware RGB
+renderer; it cannot alter key behavior.
 
 ## Physical gate
 
@@ -31,5 +31,5 @@ in a release candidate, flash both halves with the guided installer and verify:
 1. The keyboard presents a second USB HID interface while wired.
 2. A host writes a valid 32-byte snapshot to that interface.
 3. Invalid frames are ignored and ordinary key input remains unaffected.
-4. A `working` state in slot F6 turns the right F6 proof LED teal, while F1
-   remains unchanged.
+4. A `working` state in any slot turns its matching F key teal, while other
+   slots remain unchanged.

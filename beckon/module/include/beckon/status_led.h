@@ -28,11 +28,17 @@
 #define BECKON_STATUS_LED_COUNT_PER_HALF 5
 
 /*
- * Return an RGB override for one declarative agent status. `false` means the
- * status has no display ownership and the normal layer RGB should show.
+ * Resolve an RGB override from the host-supplied semantic treatment. `false`
+ * means the status has no display ownership and normal layer RGB should show.
  */
-bool beckon_status_led_color(enum beckon_agent_status status, uint32_t *rgb);
+bool beckon_status_led_color(enum beckon_agent_status status,
+                             const struct beckon_status_treatment treatments[], uint32_t *rgb);
 
 /* Beckon owns an indicator only while its keymap layer is active. */
 bool beckon_status_led_should_render(bool beckon_layer_active, enum beckon_agent_status status,
+                                     const struct beckon_status_treatment treatments[],
                                      uint32_t *rgb);
+
+/* Apply one local animation phase to an already brightness-capped RGB value. */
+uint32_t beckon_status_led_apply_motion(uint32_t rgb, enum beckon_status_motion motion,
+                                        uint32_t phase_ms);

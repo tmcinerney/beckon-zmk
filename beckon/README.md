@@ -92,7 +92,10 @@ This static renderer has no effects, per-key user colors, or animation. The Glov
 owns physical LED wiring. Its `pixel-lookup` maps a WS2812 strip index to a
 matrix position. `check-status-led-mapping.sh` verifies all ten F-row
 relationships, so a keymap or board mapping change cannot silently move an
-indicator.
+indicator. Status colours are scaled to a maximum 80% brightness before the
+override is written, matching MoErgo's Glove80 RGB safety limit; this is
+independent of host data and prevents a status such as white `done` from
+bypassing the board limit.
 
 The override composes over normal per-key layer RGB, respects `RGB_OFF`, and
 yields to Magic's temporary keyboard-status display. Keep RGB enabled when

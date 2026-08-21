@@ -20,6 +20,16 @@ config BECKON_STATUS_LED_LAYER
     depends on BECKON_STATUS_LED_PROOF
     default 4
 
+config BECKON_STATUS_LED_BRIGHTNESS_PERCENT
+    int "Maximum brightness for Beckon status LEDs"
+    depends on BECKON_STATUS_LED_PROOF
+    range 0 80
+    default 80
+    help
+      Scale host-derived status colours before they are written to the LED
+      strip. Glove80 board configurations cap normal RGB at 80 percent; this
+      cap keeps the status override within the same hardware-safe limit.
+
 config BECKON_STATUS_SPLIT_SYNC
     bool "Synchronize Beckon status to split peripheral"
     depends on BECKON_STATUS_LED_PROOF && ZMK_SPLIT_BLE

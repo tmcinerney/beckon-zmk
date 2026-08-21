@@ -97,8 +97,12 @@ static const struct device *led_strip;
 
 static struct led_rgb pixels[STRIP_NUM_PIXELS];
 static struct led_rgb status_pixels[STRIP_NUM_PIXELS];
+static struct led_rgb pixel_overrides[STRIP_NUM_PIXELS];
+static bool pixel_override_active[STRIP_NUM_PIXELS];
 
 static struct rgb_underglow_state state;
+
+static void zmk_led_write_pixels(void);
 
 #if IS_ENABLED(CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER)
 static const struct device *const ext_power = DEVICE_DT_GET(DT_INST(0, zmk_ext_power_generic));
@@ -249,7 +253,12 @@ static void zmk_led_write_pixels(void) {
     }
 
     // fast path: no status indicators, battery level OK
-    if (blend == 0 && bat0 >= 20) {
+    bool has_pixel_override = false;
+    for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
+        has_pixel_override = has_pixel_override || pixel_override_active[i];
+    }
+
+    if (!has_pixel_override && blend == 0 && bat0 >= 20) {
         led_strip_update_rgb(led_strip, pixels, STRIP_NUM_PIXELS);
         return;
     }
@@ -284,6 +293,17 @@ static void zmk_led_write_pixels(void) {
                 ((status_pixels[i].g * blend_l) >> 8) + ((pixels[i].g * blend_r) >> 8);
             led_buffer[i].b =
                 ((status_pixels[i].b * blend_l) >> 8) + ((pixels[i].b * blend_r) >> 8);
+        }
+    }
+
+    // AIDEV-NOTE: Host display state is a per-pixel overlay over MoErgo's
+    // regular layer renderer. Magic's temporary status display intentionally
+    // has priority, and RGB_OFF remains authoritative.
+    if (state.on && !state.status_active) {
+        for (int i = 0; i < STRIP_NUM_PIXELS; i++) {
+            if (pixel_override_active[i]) {
+                led_buffer[i] = pixel_overrides[i];
+            }
         }
     }
 
@@ -902,6 +922,31 @@ int zmk_rgb_underglow_status(void) {
 
     k_timer_start(&underglow_status_update_timer, K_NO_WAIT, K_MSEC(25));
 
+    return 0;
+}
+
+int zmk_rgb_underglow_override_pixel(uint8_t pixel, uint32_t rgb) {
+    if (pixel >= STRIP_NUM_PIXELS) {
+        return -EINVAL;
+    }
+
+    pixel_overrides[pixel] = (struct led_rgb){
+        .r = (rgb >> 16) & 0xff,
+        .g = (rgb >> 8) & 0xff,
+        .b = rgb & 0xff,
+    };
+    pixel_override_active[pixel] = true;
+    zmk_led_write_pixels();
+    return 0;
+}
+
+int zmk_rgb_underglow_clear_pixel_override(uint8_t pixel) {
+    if (pixel >= STRIP_NUM_PIXELS) {
+        return -EINVAL;
+    }
+
+    pixel_override_active[pixel] = false;
+    zmk_led_write_pixels();
     return 0;
 }
 

@@ -5,3 +5,12 @@ menuconfig BECKON_STATUS_TRANSPORT
       Receive declarative agent-status snapshots from the host on the split
       central's vendor-defined Raw HID interface. This never accepts key,
       behavior, or other control commands.
+
+config BECKON_STATUS_LED_PROOF
+    bool "Beckon F1 status LED proof"
+    depends on BECKON_STATUS_TRANSPORT && ZMK_RGB_UNDERGLOW
+    default n
+    help
+      Render snapshot slot 0 on the Glove80 left-half F1 LED. This is a
+      deliberately single-key, central-only proof before split propagation
+      and full ten-key rendering are added.

@@ -1,5 +1,6 @@
 if(CONFIG_BECKON_STATUS_TRANSPORT)
   zephyr_library()
   zephyr_library_sources(src/events.c src/protocol.c src/status_transport.c)
+  zephyr_library_sources_ifdef(CONFIG_BECKON_STATUS_LED_PROOF src/status_led.c src/status_led_color.c)
   zephyr_library_include_directories(include)
 endif()

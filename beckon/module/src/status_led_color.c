@@ -39,3 +39,8 @@ bool beckon_status_led_color(enum beckon_agent_status status, uint32_t *rgb) {
 
     return false;
 }
+
+bool beckon_status_led_should_render(bool beckon_layer_active, enum beckon_agent_status status,
+                                     uint32_t *rgb) {
+    return beckon_layer_active && beckon_status_led_color(status, rgb);
+}

@@ -14,3 +14,8 @@ config BECKON_STATUS_LED_PROOF
       Render snapshot slot 0 on the Glove80 left-half F1 LED. This is a
       deliberately single-key, central-only proof before split propagation
       and full ten-key rendering are added.
+
+config BECKON_STATUS_LED_LAYER
+    int "Keymap layer that displays Beckon status LEDs"
+    depends on BECKON_STATUS_LED_PROOF
+    default 4

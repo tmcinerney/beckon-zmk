@@ -21,3 +21,7 @@
  * status has no display ownership and the normal layer RGB should show.
  */
 bool beckon_status_led_color(enum beckon_agent_status status, uint32_t *rgb);
+
+/* Beckon owns an indicator only while its keymap layer is active. */
+bool beckon_status_led_should_render(bool beckon_layer_active, enum beckon_agent_status status,
+                                     uint32_t *rgb);

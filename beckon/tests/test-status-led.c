@@ -21,5 +21,10 @@ int main(void) {
     assert(rgb == 0xFFB000);
     assert(!beckon_status_led_color(BECKON_AGENT_STATUS_IDLE, NULL));
     assert(!beckon_status_led_color((enum beckon_agent_status)99, &rgb));
+
+    assert(!beckon_status_led_should_render(false, BECKON_AGENT_STATUS_WORKING, &rgb));
+    assert(beckon_status_led_should_render(true, BECKON_AGENT_STATUS_WORKING, &rgb));
+    assert(rgb == 0x00C48C);
+    assert(!beckon_status_led_should_render(true, BECKON_AGENT_STATUS_UNBOUND, &rgb));
     return 0;
 }

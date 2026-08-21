@@ -34,10 +34,12 @@ west update --fetch-opt=--filter=tree:0
 west zephyr-export
 west build -s app -d build/beckon-lh -b glove80_lh -- \
   -DKEYMAP_FILE="$PWD/beckon/config/beckon.keymap" \
-  -DEXTRA_CONF_FILE="$PWD/beckon/config/beckon.conf"
+  -DEXTRA_CONF_FILE="$PWD/beckon/config/beckon.conf;$PWD/beckon/config/transport.conf" \
+  -DZMK_EXTRA_MODULES="$PWD/beckon/module"
 west build -s app -d build/beckon-rh -b glove80_rh -- \
   -DKEYMAP_FILE="$PWD/beckon/config/beckon.keymap" \
-  -DEXTRA_CONF_FILE="$PWD/beckon/config/beckon.conf"
+  -DEXTRA_CONF_FILE="$PWD/beckon/config/beckon.conf" \
+  -DZMK_EXTRA_MODULES="$PWD/beckon/module"
 cat build/beckon-lh/zephyr/zmk.uf2 build/beckon-rh/zephyr/zmk.uf2 > beckon/glove80.uf2
 ./beckon/tests/check-keymap.sh
 ```
@@ -58,8 +60,19 @@ The checks deliberately cover different failure modes:
   Base/Beckon toggle.
 - `check-memory.sh` rejects builds above conservative 60% flash or 50% RAM
   guardrails.
-- Future host-controlled HID code must add Zephyr `ztest` coverage for packet
-  validation, state rendering, invalid packets, and split-side propagation.
+- `test-status-protocol.sh` exercises the strict, status-only Raw HID frame
+  parser outside a device build.
+
+## Status transport scaffold
+
+The left Glove80 half is the USB-connected split central. It exposes a second,
+vendor-defined Raw HID interface used only for a fixed-size status snapshot.
+The right half exposes no host transport. It will receive future LED state from
+the central through ZMK's split transport.
+
+The current firmware receives and validates the frame, then publishes a copied
+ZMK event. It intentionally does **not** change LEDs yet. The protocol and the
+physical acceptance criteria are in [transport-protocol.md](transport-protocol.md).
 
 ## Recovery and release safety
 

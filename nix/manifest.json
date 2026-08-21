@@ -28,6 +28,12 @@
     "sha256": "1a2sngqmlk266x8lsjvr3wm3kv3fxn9885sx8sk3zskbvz3g5998"
   },
   {
+    "name": "zmk-raw-hid",
+    "url": "https://github.com/zzeneg/zmk-raw-hid.git",
+    "revision": "e25e325adc90fccb60cc08393b8c2b0ba6d647c7",
+    "sha256": "sha256-PBiatn5Z6z10QEgFSllJ03RGAfZTXswDXws/iES6Kuw="
+  },
+  {
     "name": "chre",
     "url": "https://github.com/zephyrproject-rtos/chre",
     "revision": "3b32c76efee705af146124fb4190f71be5a4e36e",

@@ -1,0 +1,29 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b9f02df..a54a917 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -4,7 +4,7 @@ if (CONFIG_RAW_HID)
+   zephyr_library_sources(src/events.c)
+   zephyr_library_sources(src/usb_hid.c)
+ 
+-  if (CONFIG_ZMK_BLE)
++  if (CONFIG_RAW_HID_BLE)
+     zephyr_library_sources(src/hog.c)
+   endif()
+ 
+diff --git a/Kconfig b/Kconfig
+index b230263..781712a 100644
+--- a/Kconfig
++++ b/Kconfig
+@@ -17,4 +17,9 @@ config RAW_HID_REPORT_SIZE
+ 
+ config RAW_HID_DEVICE
+     string "Raw HID Device"
+-    default HID_1
+\ No newline at end of file
++    default HID_1
++
++config RAW_HID_BLE
++    bool "Enable Raw HID over Bluetooth"
++    depends on RAW_HID && ZMK_BLE
++    default n

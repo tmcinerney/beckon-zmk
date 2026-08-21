@@ -48,6 +48,7 @@ let
 
   requiredZephyrModules = [
     "cmsis" "hal_nordic" "tinycrypt" "lvgl" "picolibc" "segger" "cirque-input-module"
+    "zmk-raw-hid"
   ];
 
   # Some Zephyr modules seemingly need a symlink indirection (modulePath),

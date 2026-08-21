@@ -6,6 +6,8 @@ manifest:
       url-base: https://github.com/zmkfirmware
     - name: petejohanson
       url-base: https://github.com/petejohanson
+    - name: zzeneg
+      url-base: https://github.com/zzeneg
   projects:
     - name: zephyr
       remote: zmkfirmware
@@ -42,5 +44,10 @@ manifest:
     - name: cirque-input-module
       remote: petejohanson
       revision: 0de55f36bc720b5be3d8880dc856d4d78baf5214
+    - name: zmk-raw-hid
+      remote: zzeneg
+      # Pin rather than tracking main: this module defines the host-facing
+      # Beckon transport boundary and must change only through review.
+      revision: e25e325adc90fccb60cc08393b8c2b0ba6d647c7
   self:
     west-commands: scripts/west-commands.yml

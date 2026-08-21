@@ -1,0 +1,4 @@
+name: beckon-status-transport
+build:
+  cmake: .
+  kconfig: Kconfig

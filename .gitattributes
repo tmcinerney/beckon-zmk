@@ -5,3 +5,4 @@
 .bashrc text eol=lf
 *.sh text eol=lf
 *.nix text eol=lf
+beckon/patches/*.patch whitespace=-blank-at-eol

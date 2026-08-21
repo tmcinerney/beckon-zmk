@@ -16,7 +16,13 @@ let
 
       installPhase = ''
         mkdir $out
-        ln -s ${finalAttrs.src} $out/${name}
+        ${if name == "zmk-raw-hid" then ''
+          cp -a ${finalAttrs.src}/. $out/${name}
+          chmod -R u+w $out/${name}
+          patch -p1 -d $out/${name} < ${../beckon/patches/zmk-raw-hid-usb-only.patch}
+        '' else ''
+          ln -s ${finalAttrs.src} $out/${name}
+        ''}
       '';
 
       passthru = {

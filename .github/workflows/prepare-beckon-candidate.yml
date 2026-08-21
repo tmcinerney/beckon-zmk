@@ -49,6 +49,7 @@ jobs:
           west init -l app
           west update --fetch-opt=--filter=tree:0
           west zephyr-export
+          git -C zmk-raw-hid apply "$GITHUB_WORKSPACE/beckon/patches/zmk-raw-hid-usb-only.patch"
       - name: Build, check, and prepare candidate assets
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
@@ -61,13 +62,16 @@ jobs:
           case "$SOURCE_COMMIT" in *[!0-9a-f]*) exit 2 ;; esac
           west build -s app -d build/beckon-lh -b glove80_lh -- \
             -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
-            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/lh-build.log
+            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf;$GITHUB_WORKSPACE/beckon/config/transport.conf" \
+            -DZMK_EXTRA_MODULES="$GITHUB_WORKSPACE/beckon/module" 2>&1 | tee beckon/lh-build.log
           west build -s app -d build/beckon-rh -b glove80_rh -- \
             -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
-            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" 2>&1 | tee beckon/rh-build.log
+            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" \
+            -DZMK_EXTRA_MODULES="$GITHUB_WORKSPACE/beckon/module" 2>&1 | tee beckon/rh-build.log
           cat build/beckon-lh/zephyr/zmk.uf2 build/beckon-rh/zephyr/zmk.uf2 > beckon/beckon.uf2
           cat beckon/lh-build.log beckon/rh-build.log > beckon/build.log
           ./beckon/tests/test-checks.sh
+          ./beckon/tests/check-raw-hid-usb-only.sh build/beckon-lh
           ./beckon/tests/check-memory.sh beckon/build.log
           (cd beckon && sha256sum beckon.uf2 > SHA256SUMS)
           printf '{\n  "release_tag": "%s",\n  "candidate_tag": "%s",\n  "commit": "%s"\n}\n' \

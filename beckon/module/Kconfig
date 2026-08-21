@@ -1,0 +1,7 @@
+menuconfig BECKON_STATUS_TRANSPORT
+    bool "Beckon host status transport"
+    depends on RAW_HID
+    help
+      Receive declarative agent-status snapshots from the host on the split
+      central's vendor-defined Raw HID interface. This never accepts key,
+      behavior, or other control commands.

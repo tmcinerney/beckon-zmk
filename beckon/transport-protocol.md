@@ -8,14 +8,14 @@ fixed 32-byte output report. It is enabled only on Glove80's left, split-central
 half. The right half remains a ZMK split peripheral and will receive display
 state only through a later central-to-peripheral transport extension.
 
-| Byte(s) | Meaning |
-| --- | --- |
-| 0 | Protocol version: `1` |
-| 1 | Message type: `1` (complete snapshot) |
-| 2 | Host sequence number, modulo 256 |
-| 3 | Reserved, must be `0` |
-| 4–13 | Agent state for F1 through F10 |
-| 14–31 | Reserved, must be `0` |
+| Byte(s) | Meaning                               |
+| ------- | ------------------------------------- |
+| 0       | Protocol version: `1`                 |
+| 1       | Message type: `1` (complete snapshot) |
+| 2       | Host sequence number, modulo 256      |
+| 3       | Reserved, must be `0`                 |
+| 4–13    | Agent state for F1 through F10        |
+| 14–31   | Reserved, must be `0`                 |
 
 Agent state values are `0` unbound, `1` idle, `2` working, `3` blocked, `4`
 done, and `5` unknown. The firmware rejects every malformed or unsupported

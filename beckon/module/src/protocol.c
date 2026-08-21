@@ -15,9 +15,7 @@ enum {
     SLOT_STATES_OFFSET = 4,
 };
 
-static bool is_valid_status(uint8_t status) {
-    return status <= BECKON_AGENT_STATUS_UNKNOWN;
-}
+static bool is_valid_status(uint8_t status) { return status <= BECKON_AGENT_STATUS_UNKNOWN; }
 
 int beckon_status_transport_decode(const uint8_t *data, size_t length,
                                    struct beckon_status_snapshot *out) {
@@ -42,8 +40,8 @@ int beckon_status_transport_decode(const uint8_t *data, size_t length,
             return -EINVAL;
         }
     }
-    for (size_t i = SLOT_STATES_OFFSET + BECKON_STATUS_SLOT_COUNT;
-         i < BECKON_STATUS_REPORT_SIZE; i++) {
+    for (size_t i = SLOT_STATES_OFFSET + BECKON_STATUS_SLOT_COUNT; i < BECKON_STATUS_REPORT_SIZE;
+         i++) {
         if (data[i] != 0) {
             return -EINVAL;
         }

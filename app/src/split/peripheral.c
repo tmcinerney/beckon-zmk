@@ -30,6 +30,16 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 const struct zmk_split_transport_peripheral *active_transport;
 
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+/*
+ * Provided by the Beckon module. This explicit link, rather than a weak
+ * fallback, makes a mismatched upstream rebase fail at build time instead of
+ * silently accepting split status writes without updating the right half.
+ */
+int zmk_split_peripheral_handle_beckon_status(
+    const struct zmk_split_transport_beckon_status *status);
+#endif
+
 int zmk_split_transport_peripheral_command_handler(
     const struct zmk_split_transport_peripheral *transport,
     struct zmk_split_transport_central_command cmd) {
@@ -71,6 +81,10 @@ int zmk_split_transport_peripheral_command_handler(
         return raise_zmk_split_peripheral_layer_changed(
             (struct zmk_split_peripheral_layer_changed){.layers = cmd.data.set_rgb_layers.layers});
     }
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+    case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_BECKON_STATUS:
+        return zmk_split_peripheral_handle_beckon_status(&cmd.data.set_beckon_status);
+#endif
     default:
         LOG_WRN("Unhandled command type %d", cmd.type);
         return -ENOTSUP;

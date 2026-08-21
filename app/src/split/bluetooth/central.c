@@ -62,6 +62,9 @@ struct peripheral_slot {
 #endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     uint16_t selected_physical_layout_handle;
     uint16_t update_layers_handle;
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+    uint16_t update_beckon_status_handle;
+#endif
 
     uint8_t position_state[POSITION_STATE_DATA_LEN];
     uint8_t changed_positions[POSITION_STATE_DATA_LEN];
@@ -223,6 +226,9 @@ int release_peripheral_slot(int index) {
     slot->update_hid_indicators = 0;
 #endif // IS_ENABLED(CONFIG_ZMK_SPLIT_PERIPHERAL_HID_INDICATORS)
     slot->update_layers_handle = 0;
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+    slot->update_beckon_status_handle = 0;
+#endif
 
     return 0;
 }
@@ -628,6 +634,12 @@ static uint8_t split_central_chrc_discovery_func(struct bt_conn *conn,
                                 BT_UUID_DECLARE_128(ZMK_SPLIT_BT_UPDATE_LAYERS_UUID))) {
             LOG_DBG("Found update Layers handle");
             slot->update_layers_handle = bt_gatt_attr_value_handle(attr);
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+        } else if (!bt_uuid_cmp(((struct bt_gatt_chrc *)attr->user_data)->uuid,
+                                BT_UUID_DECLARE_128(ZMK_SPLIT_BT_UPDATE_BECKON_STATUS_UUID))) {
+            LOG_DBG("Found update Beckon status handle");
+            slot->update_beckon_status_handle = bt_gatt_attr_value_handle(attr);
+#endif
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
         } else if (!bt_uuid_cmp(((struct bt_gatt_chrc *)attr->user_data)->uuid,
                                 BT_UUID_BAS_BATTERY_LEVEL)) {
@@ -716,6 +728,18 @@ static uint8_t split_central_chrc_discovery_func(struct bt_conn *conn,
 #endif // IS_ENABLED(CONFIG_ZMK_INPUT_SPLIT)
 
     subscribed = subscribed && slot->update_layers_handle;
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+    subscribed = subscribed && slot->update_beckon_status_handle;
+    if (subscribed) {
+        int source = peripheral_slot_index_for_conn(conn);
+        if (source >= 0) {
+            int err = zmk_split_central_resync_beckon_status(source);
+            if (err < 0) {
+                LOG_WRN("Failed to resync Beckon status to peripheral (%d)", err);
+            }
+        }
+    }
+#endif
 
     return subscribed ? BT_GATT_ITER_STOP : BT_GATT_ITER_CONTINUE;
 }
@@ -1119,6 +1143,22 @@ void split_central_split_run_callback(struct k_work *work) {
                 LOG_ERR("Failed to send layers to peripheral (err %d)", err);
             }
             break;
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+        case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_BECKON_STATUS:
+            if (!peripherals[payload_wrapper.source].update_beckon_status_handle) {
+                LOG_WRN("No Beckon status handle on peripheral");
+                break;
+            }
+            err = bt_gatt_write_without_response(
+                peripherals[payload_wrapper.source].conn,
+                peripherals[payload_wrapper.source].update_beckon_status_handle,
+                &payload_wrapper.cmd.data.set_beckon_status,
+                sizeof(payload_wrapper.cmd.data.set_beckon_status), true);
+            if (err) {
+                LOG_ERR("Failed to send Beckon status to peripheral (%d)", err);
+            }
+            break;
+#endif
 
         default:
             LOG_WRN("Unsupported wrapped central command type %d", payload_wrapper.cmd.type);
@@ -1202,6 +1242,9 @@ static int split_central_bt_send_command(uint8_t source,
 
     switch (cmd.type) {
     case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_RGB_LAYERS:
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+    case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_BECKON_STATUS:
+#endif
     case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_HID_INDICATORS:
     case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_PHYSICAL_LAYOUT:
     case ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_INVOKE_BEHAVIOR: {

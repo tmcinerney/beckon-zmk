@@ -23,6 +23,56 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 const struct zmk_split_transport_central *active_transport;
 
+#if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
+static struct zmk_split_transport_beckon_status beckon_status;
+static bool beckon_status_available;
+
+static int send_beckon_status(uint8_t source) {
+    if (!active_transport || !active_transport->api || !active_transport->api->send_command) {
+        return -ENODEV;
+    }
+
+    return active_transport->api->send_command(
+        source, (struct zmk_split_transport_central_command){
+                    .type = ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_BECKON_STATUS,
+                    .data = {.set_beckon_status = beckon_status},
+                });
+}
+
+int zmk_split_central_update_beckon_status(const struct zmk_split_transport_beckon_status *status) {
+    if (!status) {
+        return -EINVAL;
+    }
+
+    beckon_status = *status;
+    beckon_status_available = true;
+
+    if (!active_transport || !active_transport->api ||
+        !active_transport->api->get_available_source_ids) {
+        return -ENODEV;
+    }
+
+    uint8_t source_ids[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT];
+    int count = active_transport->api->get_available_source_ids(source_ids);
+    if (count < 0) {
+        return count;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+        int err = send_beckon_status(source_ids[i]);
+        if (err < 0) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+int zmk_split_central_resync_beckon_status(uint8_t source) {
+    return beckon_status_available ? send_beckon_status(source) : 0;
+}
+#endif
+
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING)
 
 static uint8_t peripheral_battery_levels[ZMK_SPLIT_CENTRAL_PERIPHERAL_COUNT] = {0};

@@ -67,6 +67,19 @@ enum zmk_split_transport_central_command_type {
     ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_PHYSICAL_LAYOUT,
     ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_HID_INDICATORS,
     ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_RGB_LAYERS,
+    /*
+     * Beckon sends its host snapshot to split peripherals over ZMK's already
+     * encrypted split service. This is deliberately not a host-facing BLE
+     * endpoint: only the USB-connected central can originate it.
+     */
+    ZMK_SPLIT_TRANSPORT_CENTRAL_CMD_TYPE_SET_BECKON_STATUS,
+} __packed;
+
+#define ZMK_SPLIT_TRANSPORT_BECKON_STATUS_SLOT_COUNT 10
+
+struct zmk_split_transport_beckon_status {
+    uint8_t sequence;
+    uint8_t slots[ZMK_SPLIT_TRANSPORT_BECKON_STATUS_SLOT_COUNT];
 } __packed;
 
 struct zmk_split_transport_central_command {
@@ -92,5 +105,7 @@ struct zmk_split_transport_central_command {
         struct {
             uint32_t layers;
         } set_rgb_layers;
+
+        struct zmk_split_transport_beckon_status set_beckon_status;
     } data;
 } __packed;

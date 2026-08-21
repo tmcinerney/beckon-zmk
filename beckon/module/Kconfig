@@ -8,14 +8,23 @@ menuconfig BECKON_STATUS_TRANSPORT
 
 config BECKON_STATUS_LED_PROOF
     bool "Beckon F1 status LED proof"
-    depends on BECKON_STATUS_TRANSPORT && ZMK_RGB_UNDERGLOW
+    depends on ZMK_RGB_UNDERGLOW
     default n
     help
-      Render snapshot slot 0 on the Glove80 left-half F1 LED. This is a
-      deliberately single-key, central-only proof before split propagation
-      and full ten-key rendering are added.
+      Render snapshot slot 0 on the Glove80 left-half F1 and slot 5 on the
+      right-half F6. The right-half indicator receives the same snapshot
+      through ZMK's authenticated split transport, never Raw HID over BLE.
 
 config BECKON_STATUS_LED_LAYER
     int "Keymap layer that displays Beckon status LEDs"
     depends on BECKON_STATUS_LED_PROOF
     default 4
+
+config BECKON_STATUS_SPLIT_SYNC
+    bool "Synchronize Beckon status to split peripheral"
+    depends on BECKON_STATUS_LED_PROOF && ZMK_SPLIT_BLE
+    default y
+    help
+      Send a compact status snapshot through the existing encrypted ZMK split
+      service so right-half LEDs can render F6-F10. This adds no host-visible
+      Bluetooth HID or Raw HID endpoint.

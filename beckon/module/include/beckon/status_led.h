@@ -16,6 +16,9 @@
  */
 #define BECKON_GLOVE80_LEFT_F1_PIXEL 34
 
+/* The Glove80 right board's lookup maps matrix position 5 (F6) to strip 10. */
+#define BECKON_GLOVE80_RIGHT_F6_PIXEL 10
+
 /*
  * Return an RGB override for one declarative agent status. `false` means the
  * status has no display ownership and the normal layer RGB should show.

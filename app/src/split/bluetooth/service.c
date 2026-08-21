@@ -144,9 +144,9 @@ static ssize_t split_svc_get_selected_phys_layout(struct bt_conn *conn,
 static uint32_t layers = 0;
 
 #if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
-static ssize_t split_svc_update_beckon_status(struct bt_conn *conn,
-                                              const struct bt_gatt_attr *attr, const void *buf,
-                                              uint16_t len, uint16_t offset, uint8_t flags) {
+static ssize_t split_svc_update_beckon_status(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+                                              const void *buf, uint16_t len, uint16_t offset,
+                                              uint8_t flags) {
     ARG_UNUSED(conn);
     ARG_UNUSED(attr);
     ARG_UNUSED(flags);
@@ -160,8 +160,8 @@ static ssize_t split_svc_update_beckon_status(struct bt_conn *conn,
     };
     memcpy(&cmd.data.set_beckon_status, buf, sizeof(cmd.data.set_beckon_status));
 
-    int err = zmk_split_transport_peripheral_command_handler(
-        zmk_split_transport_peripheral_bt(), cmd);
+    int err =
+        zmk_split_transport_peripheral_command_handler(zmk_split_transport_peripheral_bt(), cmd);
     return err < 0 ? BT_GATT_ERR(BT_ATT_ERR_UNLIKELY) : len;
 }
 #endif
@@ -264,7 +264,7 @@ BT_GATT_SERVICE_DEFINE(
                            BT_GATT_CHRC_WRITE_WITHOUT_RESP, BT_GATT_PERM_WRITE_ENCRYPT, NULL,
                            split_svc_update_beckon_status, NULL),
 #endif
-    );
+);
 
 K_THREAD_STACK_DEFINE(service_q_stack, CONFIG_ZMK_SPLIT_BLE_PERIPHERAL_STACK_SIZE);
 

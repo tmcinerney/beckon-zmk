@@ -51,7 +51,6 @@ int zmk_split_central_get_peripheral_battery_level(uint8_t source, uint8_t *leve
 int zmk_split_central_update_layers(uint32_t layers);
 
 #if IS_ENABLED(CONFIG_BECKON_STATUS_SPLIT_SYNC)
-int zmk_split_central_update_beckon_status(
-    const struct zmk_split_transport_beckon_status *status);
+int zmk_split_central_update_beckon_status(const struct zmk_split_transport_beckon_status *status);
 int zmk_split_central_resync_beckon_status(uint8_t source);
 #endif

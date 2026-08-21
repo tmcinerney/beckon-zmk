@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -24,6 +25,23 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 static enum beckon_agent_status current_status[BECKON_STATUS_LED_COUNT_PER_HALF];
 static struct beckon_status_treatment current_treatments[BECKON_STATUS_TREATMENT_COUNT];
 static bool beckon_layer_active;
+static bool animation_running;
+
+static void refresh_status_led(void);
+
+static void animation_work_handler(struct k_work *work) {
+    ARG_UNUSED(work);
+    refresh_status_led();
+}
+
+K_WORK_DEFINE(animation_work, animation_work_handler);
+
+static void animation_timer_handler(struct k_timer *timer) {
+    ARG_UNUSED(timer);
+    k_work_submit(&animation_work);
+}
+
+K_TIMER_DEFINE(animation_timer, animation_timer_handler, NULL);
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 static const uint8_t status_led_pixels[BECKON_STATUS_LED_COUNT_PER_HALF] = {
@@ -40,11 +58,16 @@ static const uint8_t status_led_pixels[BECKON_STATUS_LED_COUNT_PER_HALF] = {
 #endif
 
 static void refresh_status_led(void) {
+    bool animate = false;
     for (size_t index = 0; index < ARRAY_SIZE(status_led_pixels); index++) {
         uint32_t rgb;
         int err;
         if (beckon_status_led_should_render(beckon_layer_active, current_status[index],
                                             current_treatments, &rgb)) {
+            enum beckon_agent_status status = current_status[index];
+            enum beckon_status_motion motion = current_treatments[status - 1].motion;
+            rgb = beckon_status_led_apply_motion(rgb, motion, k_uptime_get_32());
+            animate = animate || motion != BECKON_STATUS_MOTION_STEADY;
             err = zmk_rgb_underglow_override_pixel(status_led_pixels[index], rgb);
         } else {
             err = zmk_rgb_underglow_clear_pixel_override(status_led_pixels[index]);
@@ -52,6 +75,13 @@ static void refresh_status_led(void) {
         if (err) {
             LOG_WRN("Failed to update Beckon status LED %u: %d", index, err);
         }
+    }
+    if (animate && !animation_running) {
+        k_timer_start(&animation_timer, K_MSEC(50), K_MSEC(50));
+        animation_running = true;
+    } else if (!animate && animation_running) {
+        k_timer_stop(&animation_timer);
+        animation_running = false;
     }
 }
 

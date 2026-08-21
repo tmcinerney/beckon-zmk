@@ -34,11 +34,8 @@ int main(void) {
     assert(rgb == 0x006600);
     assert(!beckon_status_led_should_render(true, BECKON_AGENT_STATUS_UNBOUND, treatments, &rgb));
 
-    assert(beckon_status_led_apply_motion(0x808080, BECKON_STATUS_MOTION_STEADY, 0) ==
-           0x808080);
-    assert(beckon_status_led_apply_motion(0x808080, BECKON_STATUS_MOTION_PULSE, 0) ==
-           0x808080);
-    assert(beckon_status_led_apply_motion(0x808080, BECKON_STATUS_MOTION_PULSE, 500) ==
-           0x202020);
+    assert(beckon_status_led_apply_motion(0x808080, BECKON_STATUS_MOTION_STEADY, 0) == 0x808080);
+    assert(beckon_status_led_apply_motion(0x808080, BECKON_STATUS_MOTION_PULSE, 0) == 0x808080);
+    assert(beckon_status_led_apply_motion(0x808080, BECKON_STATUS_MOTION_PULSE, 500) == 0x202020);
     return 0;
 }

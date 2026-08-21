@@ -49,8 +49,8 @@ static int raw_hid_status_listener(const zmk_event_t *eh) {
     for (size_t i = 0; i < BECKON_STATUS_TREATMENT_COUNT; i++) {
         const struct beckon_status_treatment *treatment = &snapshot.treatments[i];
         split_status.treatments[i * 2] = (treatment->red & 0xf0) | (treatment->green >> 4);
-        split_status.treatments[i * 2 + 1] = (treatment->blue & 0xf0) |
-                                            (treatment->brightness >> 4);
+        split_status.treatments[i * 2 + 1] =
+            (treatment->blue & 0xf0) | (treatment->brightness >> 4);
         pack_three_bits(split_status.motions, i * 3, treatment->motion);
     }
     err = zmk_split_central_update_beckon_status(&split_status);

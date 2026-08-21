@@ -36,7 +36,8 @@ bool beckon_status_led_color(enum beckon_agent_status status,
 
 /* Beckon owns an indicator only while its keymap layer is active. */
 bool beckon_status_led_should_render(bool beckon_layer_active, enum beckon_agent_status status,
-                                     const struct beckon_status_treatment treatments[], uint32_t *rgb);
+                                     const struct beckon_status_treatment treatments[],
+                                     uint32_t *rgb);
 
 /* Apply one local animation phase to an already brightness-capped RGB value. */
 uint32_t beckon_status_led_apply_motion(uint32_t rgb, enum beckon_status_motion motion,

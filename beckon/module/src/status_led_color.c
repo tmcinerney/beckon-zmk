@@ -26,7 +26,8 @@ bool beckon_status_led_color(enum beckon_agent_status status,
 }
 
 bool beckon_status_led_should_render(bool beckon_layer_active, enum beckon_agent_status status,
-                                     const struct beckon_status_treatment treatments[], uint32_t *rgb) {
+                                     const struct beckon_status_treatment treatments[],
+                                     uint32_t *rgb) {
     return beckon_layer_active && beckon_status_led_color(status, treatments, rgb);
 }
 

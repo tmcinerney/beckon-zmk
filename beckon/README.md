@@ -107,6 +107,14 @@ the overrides return. Switching out of Beckon layer 4 clears all overrides.
 The protocol and broader physical acceptance criteria are in
 [transport-protocol.md](transport-protocol.md).
 
+## Deferred follow-up: wireless battery impact
+
+Characterize Beckon's battery impact before enabling host status over Bluetooth.
+Compare stock and Beckon firmware under the same wireless connection, RGB
+brightness/effect, typing workload, and sleep settings. Record battery level
+or, preferably, inline power-meter current over a long enough interval to
+separate the status transport cost from the much larger RGB baseline.
+
 ## Recovery and release safety
 
 An invalid ordinary ZMK image is recoverable using the Glove80 bootloader

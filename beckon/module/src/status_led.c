@@ -22,6 +22,7 @@
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 static enum beckon_agent_status current_status[BECKON_STATUS_LED_COUNT_PER_HALF];
+static struct beckon_status_treatment current_treatments[BECKON_STATUS_TREATMENT_COUNT];
 static bool beckon_layer_active;
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
@@ -42,7 +43,8 @@ static void refresh_status_led(void) {
     for (size_t index = 0; index < ARRAY_SIZE(status_led_pixels); index++) {
         uint32_t rgb;
         int err;
-        if (beckon_status_led_should_render(beckon_layer_active, current_status[index], &rgb)) {
+        if (beckon_status_led_should_render(beckon_layer_active, current_status[index],
+                                            current_treatments, &rgb)) {
             err = zmk_rgb_underglow_override_pixel(status_led_pixels[index], rgb);
         } else {
             err = zmk_rgb_underglow_clear_pixel_override(status_led_pixels[index]);
@@ -61,6 +63,7 @@ static int beckon_status_led_listener(const zmk_event_t *eh) {
 
     memcpy(current_status, &event->snapshot.slots[BECKON_STATUS_SLOT_OFFSET],
            sizeof(current_status));
+    memcpy(current_treatments, event->snapshot.treatments, sizeof(current_treatments));
     refresh_status_led();
 
     return ZMK_EV_EVENT_BUBBLE;

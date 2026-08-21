@@ -76,10 +76,16 @@ enum zmk_split_transport_central_command_type {
 } __packed;
 
 #define ZMK_SPLIT_TRANSPORT_BECKON_STATUS_SLOT_COUNT 10
+#define ZMK_SPLIT_TRANSPORT_BECKON_STATUS_TREATMENT_COUNT 5
 
 struct zmk_split_transport_beckon_status {
     uint8_t sequence;
-    uint8_t slots[ZMK_SPLIT_TRANSPORT_BECKON_STATUS_SLOT_COUNT];
+    /* 3-bit status values: 10 values fit in four bytes. */
+    uint8_t slots[4];
+    /* Five RGB444 + brightness4 treatments: two bytes each. */
+    uint8_t treatments[ZMK_SPLIT_TRANSPORT_BECKON_STATUS_TREATMENT_COUNT * 2];
+    /* Five 3-bit motion values fit in two bytes. */
+    uint8_t motions[2];
 } __packed;
 
 struct zmk_split_transport_central_command {

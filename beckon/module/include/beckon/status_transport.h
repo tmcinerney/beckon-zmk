@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define BECKON_STATUS_PROTOCOL_VERSION 1
+#define BECKON_STATUS_PROTOCOL_VERSION 2
 #define BECKON_STATUS_REPORT_SIZE 32
 #define BECKON_STATUS_SLOT_COUNT 10
 
@@ -24,9 +24,27 @@ enum beckon_agent_status {
     BECKON_AGENT_STATUS_UNKNOWN = 5,
 };
 
+enum beckon_status_motion {
+    BECKON_STATUS_MOTION_STEADY = 0,
+    BECKON_STATUS_MOTION_BREATHE = 1,
+    BECKON_STATUS_MOTION_PULSE = 2,
+    BECKON_STATUS_MOTION_FLICKER = 3,
+};
+
+#define BECKON_STATUS_TREATMENT_COUNT 5
+
+struct beckon_status_treatment {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+    uint8_t brightness;
+    enum beckon_status_motion motion;
+};
+
 struct beckon_status_snapshot {
     uint8_t sequence;
     enum beckon_agent_status slots[BECKON_STATUS_SLOT_COUNT];
+    struct beckon_status_treatment treatments[BECKON_STATUS_TREATMENT_COUNT];
 };
 
 /*

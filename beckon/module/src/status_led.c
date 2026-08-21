@@ -11,8 +11,7 @@
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 static int beckon_status_led_listener(const zmk_event_t *eh) {
-    const struct beckon_status_snapshot_received *event =
-        as_beckon_status_snapshot_received(eh);
+    const struct beckon_status_snapshot_received *event = as_beckon_status_snapshot_received(eh);
     if (!event) {
         return ZMK_EV_EVENT_BUBBLE;
     }

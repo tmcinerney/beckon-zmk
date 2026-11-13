@@ -161,5 +161,34 @@ class CIGateTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
 
 
+class UpstreamSyncTests(unittest.TestCase):
+    def test_sync_survives_previous_github_merge_commit(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / ".github/workflows/check-upstream.yml").read_text())
+        command = next(step["run"] for step in workflow["jobs"]["sync-main"]["steps"] if step.get("name") == "Fetch MoErgo main")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            upstream, mirror = root / "upstream", root / "mirror"
+            env = dict(os.environ, GIT_AUTHOR_NAME="Fixture", GIT_AUTHOR_EMAIL="fixture@example.invalid", GIT_COMMITTER_NAME="Fixture", GIT_COMMITTER_EMAIL="fixture@example.invalid")
+            def git(*args, cwd=upstream):
+                return subprocess.check_output(["git", *args], cwd=cwd, env=env, text=True, stderr=subprocess.DEVNULL)
+            upstream.mkdir()
+            git("init", "-q", "-b", "main")
+            git("commit", "-q", "--allow-empty", "-m", "base")
+            git("clone", "-q", str(upstream), str(mirror))
+            (upstream / "first").write_text("first")
+            git("add", "first")
+            git("commit", "-q", "-m", "first update")
+            git("fetch", "-q", "origin", cwd=mirror)
+            git("merge", "--no-ff", "-m", "GitHub PR merge", "origin/main", cwd=mirror)
+            (upstream / "second").write_text("second")
+            git("add", "second")
+            git("commit", "-q", "-m", "second update")
+            result = subprocess.run(["bash", "-e", "-c", command.replace("https://github.com/moergo-sc/zmk.git", str(upstream))], cwd=mirror, env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((mirror / "second").read_text(), "second")
+            git("merge-base", "--is-ancestor", "upstream/main", "HEAD", cwd=mirror)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -25,32 +25,34 @@ The mapping avoids macOS's built-in F1–F15 display/media handling.
 
 ## Build and test
 
-CI uses MoErgo/ZMK's normal `west` build image, rather than Nix. The equivalent
-commands are:
+CI uses the upstream ZMK 3.5 build container and one shared build entry point:
 
 ```sh
-west init -l app
-west update --fetch-opt=--filter=tree:0
-west zephyr-export
-west build -s app -d build/beckon-lh -b glove80_lh -- \
-  -DKEYMAP_FILE="$PWD/beckon/config/beckon.keymap" \
-  -DEXTRA_CONF_FILE="$PWD/beckon/config/beckon.conf;$PWD/beckon/config/transport.conf" \
-  -DZMK_EXTRA_MODULES="$PWD/beckon/module"
-west build -s app -d build/beckon-rh -b glove80_rh -- \
-  -DKEYMAP_FILE="$PWD/beckon/config/beckon.keymap" \
-  -DEXTRA_CONF_FILE="$PWD/beckon/config/beckon.conf" \
-  -DZMK_EXTRA_MODULES="$PWD/beckon/module"
-cat build/beckon-lh/zephyr/zmk.uf2 build/beckon-rh/zephyr/zmk.uf2 > beckon/glove80.uf2
-./beckon/tests/check-keymap.sh
+./beckon/scripts/build-west.sh
 ```
 
-The output is one combined `beckon/glove80.uf2`. Flash that same file to
-each half's bootloader drive. Never flash an unreviewed CI artifact directly.
+Run it inside the documented Linux/Docker builder with West and the Zephyr
+SDK available. On macOS, use GitHub Actions or the optional Nix expression in
+`beckon/config/default.nix`; the pinned Nix tool environment can run the
+host-side checks without a device:
 
-For local Mac builds, use the documented Linux/Docker builder from MoErgo, with
-the checkout under `~/Code` rather than `/private/tmp`, or use GitHub Actions.
-The optional Nix expression in `beckon/config/default.nix` remains useful for a
-reproducible local build, but CI deliberately does not depend on it.
+```sh
+nix-shell beckon/shell.nix
+python3 beckon/scripts/check-dependency-pins.py
+python3 -m unittest discover -s beckon/tests -p 'test_release.py' -v
+./beckon/tests/test-checks.sh
+```
+
+`app/west.yml` and `nix/manifest.json` must pin the same immutable direct
+revisions. The shared builder checks both the declarations and fetched Git
+HEADs. Both build routes apply the raw-HID USB-only patch and MoErgo's Zephyr
+input deadlock backport. Updating a dependency requires updating both pins,
+its Nix source hash, and any patch that no longer applies.
+
+A successful build emits `beckon/glove80.uf2` (both halves), `build.log`,
+`source.json` (the actual checkout SHA), and `west-frozen.yml` (resolved
+transitive dependencies). The shell uses `pipefail`: a failed compiler command
+cannot be hidden by `tee`.
 
 The checks deliberately cover different failure modes:
 
@@ -77,7 +79,7 @@ key behavior.
 
 The display renderer consumes every snapshot slot: F1–F5 on the USB-connected
 left half and F6–F10 on the split peripheral. Each overrides its LED with a
-static status color:
+host-selected status treatment. The original default colors are:
 
 | Agent state | F1 / F6 color     |
 | ----------- | ----------------- |
@@ -88,7 +90,9 @@ static status color:
 | unknown     | amber (`#FFB000`) |
 | unbound     | no override       |
 
-This static renderer has no effects, per-key user colors, or animation. The Glove80 board DTS
+Protocol v2 carries five RGB/brightness/motion treatments and ten packed status slots.
+The firmware renders steady, breathe, pulse, or flicker locally; animation does not
+require a stream of host reports. The Glove80 board DTS
 owns physical LED wiring. Its `pixel-lookup` maps a WS2812 strip index to a
 matrix position. `check-status-led-mapping.sh` verifies all ten F-row
 relationships, so a keymap or board mapping change cannot silently move an
@@ -128,8 +132,28 @@ Do not use `nrf52840-nosd` snippets or change the RGB brightness safety limit.
 
 The release path deliberately separates a build from a physical test:
 
+Every checked push to `beckon/main` automatically publishes a prerelease
+`v0.2.0-rc.<run-id>`. Set the repository variable `BECKON_RELEASE_TAG` when the
+next target version changes. Only the custom branch publishes
+automatically; PR and feature-branch builds produce artifacts for review.
+
+The build must pass workflow/shell lint, repository pre-commit, release regression
+tests, both firmware builds, protocol/renderer/keymap tests, USB-only checks, and
+memory limits. Automatic and manual candidates use the same build workflow.
+Each release includes the combined UF2, SHA-256, exact source commit, build log,
+frozen dependencies, and physical smoke checklist. A commit comment mentions
+`BECKON_NOTIFY_USER` (repository owner by default) with the download link, and
+the Actions summary links the candidate. GitHub controls inbox/email delivery
+through your notification settings. A retry of the same source/tag verifies
+existing metadata before succeeding and does not repeat the mention.
+
+A candidate is ready to **install and test**, not already physically accepted.
+Final promotion still requires your explicit physical-test confirmation.
+
+For a manually selected tag (including a candidate from an explicit feature ref):
+
 1. Choose the intended final tag, `vX.Y.Z`. The candidate metadata records
-   that tag and the exact source commit, so no version-only source commit is
+   that tag and the exact built source commit, so no version-only source commit is
    needed.
 2. Run **Prepare Beckon firmware candidate** with `vX.Y.Z` and
    `vX.Y.Z-rc.1`. It builds, tests, and publishes a prerelease containing the
@@ -167,11 +191,11 @@ has advanced. After reviewing and merging it:
 
 ```sh
 git switch beckon/main
-git rebase main
-git push --force-with-lease
+git merge main
+git push
 ```
 
-Run the firmware CI and a physical smoke test after every rebase. A conflict is
+Run the firmware CI and a physical smoke test after every upstream merge. A conflict is
 useful signal that the RGB port needs an intentional update, not something an
 automation should guess through.
 
@@ -182,6 +206,6 @@ and write repository contents. The scheduled upstream check needs this to open
 its proposal; the manually triggered release workflow needs it to create a tag
 and release. Both workflows otherwise fail closed.
 
-After the first successful Beckon firmware run, protect `beckon/main` and make
-that workflow a required status check. Do not let automation push directly to
+After the first successful Beckon firmware run, protect `beckon/main` and require the firmware build
+and checks before merging. Do not let automation push directly to
 either `main` or `beckon/main`.

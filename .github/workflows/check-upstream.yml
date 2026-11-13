@@ -6,12 +6,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: beckon-upstream-sync
+  cancel-in-progress: false
 
 jobs:
   sync-main:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -31,6 +38,6 @@ jobs:
           commit-message: "chore: sync MoErgo upstream"
           body: |
             Automated fast-forward of the upstream mirror. Merge this first,
-            then rebase `beckon/main`, run firmware CI, and physically test
+            then merge `main` into `beckon/main`, run firmware CI, and physically test
             both halves before making a release.
           base: main

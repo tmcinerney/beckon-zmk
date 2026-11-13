@@ -13,6 +13,8 @@
 /beckon/glove80.uf2
 /beckon/lh-build.log
 /beckon/rh-build.log
+/beckon/source.json
+/beckon/west-frozen.yml
 
 # macOS
 *.DS_Store

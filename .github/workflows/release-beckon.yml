@@ -22,10 +22,11 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: beckon/main
+          ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Download and verify tested candidate
         env:
@@ -41,6 +42,9 @@ jobs:
           (cd release && sha256sum --check SHA256SUMS)
           test "$(jq -r .release_tag release/candidate.json)" = "$RELEASE_TAG"
           test "$(jq -r .candidate_tag release/candidate.json)" = "$CANDIDATE_TAG"
+          commit=$(jq -er '.commit | select(test("^[0-9a-f]{40}$"))' release/candidate.json)
+          test "$(gh api "repos/$GITHUB_REPOSITORY/commits/$CANDIDATE_TAG" --jq .sha)" = "$commit"
+          test "$(jq -er .sha256 release/candidate.json)" = "$(sha256sum release/beckon.uf2 | cut -d ' ' -f 1)"
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

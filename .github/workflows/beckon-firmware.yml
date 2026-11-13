@@ -4,20 +4,25 @@ on:
   push:
     branches: [beckon/main]
     paths:
-      - "beckon/**"
-      - "app/**"
-      - "nix/**"
-      - "default.nix"
-      - ".github/workflows/beckon-firmware.yml"
+      [
+        "beckon/**",
+        "app/**",
+        "nix/**",
+        "default.nix",
+        ".github/workflows/beckon-*.yml",
+      ]
   pull_request:
     branches: [beckon/main]
     paths:
-      - "beckon/**"
-      - "app/**"
-      - "nix/**"
-      - "default.nix"
-      - ".github/workflows/beckon-firmware.yml"
+      [
+        "beckon/**",
+        "app/**",
+        "nix/**",
+        "default.nix",
+        ".github/workflows/beckon-*.yml",
+      ]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -27,12 +32,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  source-tests:
+    uses: ./.github/workflows/test.yml
+  ble-tests:
+    uses: ./.github/workflows/ble-test.yml
+  nix-build:
+    uses: ./.github/workflows/nix-build.yml
+  docs:
+    uses: ./.github/workflows/doc-checks.yml
+  checks:
     runs-on: ubuntu-latest
-    container:
-      image: docker.io/zmkfirmware/zmk-build-arm:3.5
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - name: Lint owned workflows and shell scripts
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo" -w /repo rhysd/actionlint:1.7.12 \
+            .github/workflows/beckon-firmware.yml \
+            .github/workflows/beckon-workflow-lint.yml \
+            .github/workflows/prepare-beckon-candidate.yml \
+            .github/workflows/release-beckon.yml \
+            .github/workflows/check-upstream.yml
+          shellcheck beckon/scripts/build-west.sh beckon/scripts/publish-candidate.sh
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Check repository formatting
+        run: |
+          python -m pip install pre-commit
+          pre-commit run --show-diff-on-failure --all-files
+      - name: Test candidate packaging and publish failures
+        run: |
+          python3 -m pip install west==1.3.0
+          python3 -m unittest discover -s beckon/tests -p 'test_release.py' -v
+
+  build:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: docker.io/zmkfirmware/zmk-build-arm:3.5
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - name: Trust the runner-owned checkout in this container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Restore West dependencies
         uses: actions/cache@v6
         with:
@@ -41,40 +87,41 @@ jobs:
             tools
             zephyr
             bootloader
-          key: ${{ runner.os }}-beckon-west-${{ hashFiles('app/west.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-beckon-west-
+          key: ${{ runner.os }}-beckon-west-${{ hashFiles('app/west.yml', 'nix/*.patch', 'beckon/patches/*.patch') }}
         timeout-minutes: 2
         continue-on-error: true
-      - name: Initialize upstream build workspace
-        run: |
-          west init -l app
-          west update --fetch-opt=--filter=tree:0
-          west zephyr-export
-          git -C zmk-raw-hid apply "$GITHUB_WORKSPACE/beckon/patches/zmk-raw-hid-usb-only.patch"
-      - name: Build both halves and combine UF2
-        run: |
-          west build -s app -d build/beckon-lh -b glove80_lh -- \
-            -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
-            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf;$GITHUB_WORKSPACE/beckon/config/transport.conf" \
-            -DZMK_EXTRA_MODULES="$GITHUB_WORKSPACE/beckon/module" 2>&1 | tee beckon/lh-build.log
-          west build -s app -d build/beckon-rh -b glove80_rh -- \
-            -DKEYMAP_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.keymap" \
-            -DEXTRA_CONF_FILE="$GITHUB_WORKSPACE/beckon/config/beckon.conf" \
-            -DZMK_EXTRA_MODULES="$GITHUB_WORKSPACE/beckon/module" 2>&1 | tee beckon/rh-build.log
-          cat build/beckon-lh/zephyr/zmk.uf2 build/beckon-rh/zephyr/zmk.uf2 > beckon/glove80.uf2
-          cat beckon/lh-build.log beckon/rh-build.log > beckon/build.log
-      - name: Check Beckon keymap
-        run: ./beckon/tests/test-checks.sh
-      - name: Verify Raw HID remains USB-only
-        run: ./beckon/tests/check-raw-hid-usb-only.sh build/beckon-lh
-      - name: Check memory guardrails
-        run: ./beckon/tests/check-memory.sh beckon/build.log
-      - name: Upload combined firmware and build log
+      - name: Build both halves and verify firmware
+        run: ./beckon/scripts/build-west.sh
+      - name: Upload checked firmware and provenance
         uses: actions/upload-artifact@v7
         with:
           name: beckon-glove80-uf2
           path: |
             beckon/glove80.uf2
             beckon/build.log
-          retention-days: 14
+            beckon/source.json
+            beckon/west-frozen.yml
+          if-no-files-found: error
+          retention-days: 30
+
+  candidate:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/beckon/main'
+    needs: [build, source-tests, ble-tests, nix-build, docs]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: beckon-glove80-uf2
+          path: candidate
+      - name: Package and publish checked candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ vars.BECKON_RELEASE_TAG || 'v0.2.0' }}
+          BECKON_NOTIFY_USER: ${{ vars.BECKON_NOTIFY_USER || github.repository_owner }}
+        run: |
+          python3 beckon/scripts/candidate.py candidate "$RELEASE_TAG" "$RELEASE_TAG-rc.$GITHUB_RUN_ID"
+          ./beckon/scripts/publish-candidate.sh candidate

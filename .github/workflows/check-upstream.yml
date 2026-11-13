@@ -6,12 +6,19 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: beckon-upstream-sync
+  cancel-in-progress: false
 
 jobs:
   sync-main:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -21,7 +28,11 @@ jobs:
         run: |
           git remote add upstream https://github.com/moergo-sc/zmk.git
           git fetch upstream main --tags
-          git merge --ff-only upstream/main
+          # GitHub PR merges add a merge commit to main. Future upstream updates
+          # must preserve that ancestry rather than requiring a fast-forward.
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            merge --no-edit upstream/main
       - name: Propose upstream mirror update
         uses: peter-evans/create-pull-request@v7
         with:
@@ -30,7 +41,7 @@ jobs:
           title: "chore: sync MoErgo upstream"
           commit-message: "chore: sync MoErgo upstream"
           body: |
-            Automated fast-forward of the upstream mirror. Merge this first,
-            then rebase `beckon/main`, run firmware CI, and physically test
+            Automated merge of MoErgo upstream into the mirror. Merge this first,
+            then merge `main` into `beckon/main`, run firmware CI, and physically test
             both halves before making a release.
           base: main

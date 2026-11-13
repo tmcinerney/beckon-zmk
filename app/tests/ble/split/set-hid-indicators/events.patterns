@@ -1,1 +1,3 @@
+# AIDEV-NOTE: connection-parameter debug timing is unrelated to HID indicator delivery.
+/le_param_updated:/d
 s/^d_03: @[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9][0-9][0-9][0-9]  .{19}/peripheral 0 /p

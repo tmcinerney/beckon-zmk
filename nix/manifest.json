@@ -30,8 +30,8 @@
   {
     "name": "zmk-raw-hid",
     "url": "https://github.com/zzeneg/zmk-raw-hid.git",
-    "revision": "e25e325adc90fccb60cc08393b8c2b0ba6d647c7",
-    "sha256": "sha256-PBiatn5Z6z10QEgFSllJ03RGAfZTXswDXws/iES6Kuw="
+    "revision": "6a37765dfab6197292e7a9f47305dcf87386d56a",
+    "sha256": "sha256-r4EpCQqbxLMRbPieopBImNWtYBXfV91P9yDsHsqnVLI="
   },
   {
     "name": "chre",

@@ -10,6 +10,11 @@ Before promotion, verify:
 - Beckon F1–F5 send F16–F20; F6–F10 send Shift+F16–Shift+F20.
 - The host hotkey listener receives all ten expected inputs.
 - RGB can be enabled and both halves light correctly.
+- In USB mode, Beckon status updates reach the expected F1-F10 LEDs across both
+  halves, including host-selected colors and animations. Existing bindings work.
+- Leaving Beckon layer clears the status overrides; Magic's status display wins.
+- Disconnecting/reconnecting the right half restores its last status snapshot.
+- Bluetooth typing still works. Beckon vendor status over BLE is not enabled.
 - The halves reconnect to each other and the normal host after flashing.
 
 Do not factory-reset automatically. If the halves do not reconnect after this

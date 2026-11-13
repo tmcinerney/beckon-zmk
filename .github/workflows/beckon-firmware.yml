@@ -77,6 +77,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
+      - name: Trust the runner-owned checkout in this container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Restore West dependencies
         uses: actions/cache@v6
         with:

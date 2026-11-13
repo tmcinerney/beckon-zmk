@@ -162,5 +162,22 @@ class UpstreamSyncTests(unittest.TestCase):
             git("merge-base", "--is-ancestor", "upstream/main", "HEAD", cwd=mirror)
 
 
+class BuildIdentityTests(unittest.TestCase):
+    def test_git_failure_stops_before_any_build(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            git = root / "git"
+            git.write_text("#!/usr/bin/env bash\nexit 42\n")
+            git.chmod(0o755)
+            marker = root / "west-called"
+            west = root / "west"
+            west.write_text("#!/usr/bin/env bash\ntouch \"$WEST_MARKER\"\n")
+            west.chmod(0o755)
+            env = dict(os.environ, PATH=directory + os.pathsep + os.environ["PATH"], WEST_MARKER=str(marker))
+            result = subprocess.run(["bash", str(ROOT / "beckon/scripts/build-west.sh")], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 42, result.stderr)
+            self.assertFalse(marker.exists())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,13 @@ set -euo pipefail
 
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
+# AIDEV-NOTE: capture identity before compiling; a failed substitution inside
+# printf would otherwise leave an empty SHA while returning success.
+source_commit=$(git rev-parse --verify HEAD)
+if [[ ! "$source_commit" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "Cannot determine the firmware source commit" >&2
+  exit 1
+fi
 python3 beckon/scripts/check-dependency-pins.py
 if [[ ! -d .west ]]; then
   west init -l app
@@ -39,4 +46,4 @@ cat beckon/lh-build.log beckon/rh-build.log > beckon/build.log
 ./beckon/tests/check-raw-hid-usb-only.sh build/beckon-lh
 ./beckon/tests/check-memory.sh beckon/build.log
 python3 beckon/scripts/freeze-dependencies.py > beckon/west-frozen.yml
-printf '{"commit": "%s"}\n' "$(git rev-parse HEAD)" > beckon/source.json
+printf '{"commit": "%s"}\n' "$source_commit" > beckon/source.json

@@ -11,7 +11,7 @@ manifest:
   projects:
     - name: zephyr
       remote: zmkfirmware
-      revision: v3.5.0+zmk-fixes
+      revision: f742ae36021571445b199a6b3c2cb3a6e3193833
       clone-depth: 1
       import:
         name-blocklist:
@@ -48,6 +48,6 @@ manifest:
       remote: zzeneg
       # Pin rather than tracking main: this module defines the host-facing
       # Beckon transport boundary and must change only through review.
-      revision: e25e325adc90fccb60cc08393b8c2b0ba6d647c7
+      revision: 6a37765dfab6197292e7a9f47305dcf87386d56a
   self:
     west-commands: scripts/west-commands.yml

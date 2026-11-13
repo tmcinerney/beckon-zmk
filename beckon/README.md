@@ -139,8 +139,9 @@ automatically; PR and feature-branch builds produce artifacts for review.
 
 The build must pass workflow/shell lint, repository pre-commit, release regression
 tests, both firmware builds, protocol/renderer/keymap tests, USB-only checks, and
-memory limits. Publication also waits for every triggered upstream test, BLE
-simulator, Nix-build, docs, and lint workflow at the same source SHA. Automatic and manual candidates use the same build workflow.
+memory limits. Every candidate also runs the upstream tests, BLE simulator, Nix builds, and
+docs checks as reusable workflows at the same source SHA. Native job dependencies
+block publication on any failure, even for a workflow-only change. Automatic and manual candidates use the same build workflow.
 Each release includes the combined UF2, SHA-256, exact source commit, build log,
 frozen dependencies, and physical smoke checklist. A commit comment mentions
 `BECKON_NOTIFY_USER` (repository owner by default) with the download link, and

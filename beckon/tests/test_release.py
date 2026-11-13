@@ -133,34 +133,6 @@ class FrozenDependencyTests(unittest.TestCase):
                 module.freeze(manifest)
 
 
-class CIGateTests(unittest.TestCase):
-    def gate(self, runs):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            mock = root / "gh"
-            mock.write_text("#!/usr/bin/env python3\nimport os\nprint(os.environ['GH_RUNS'])\n")
-            mock.chmod(0o755)
-            env = dict(os.environ, PATH=directory + os.pathsep + os.environ["PATH"], GITHUB_REPOSITORY="test/firmware", GH_RUNS=json.dumps(runs), BECKON_CI_ATTEMPTS="1", BECKON_CI_INTERVAL_SECONDS="0")
-            return subprocess.run(["bash", str(ROOT / "beckon/scripts/wait-for-ci.sh"), "a" * 40], env=env, capture_output=True, text=True)
-
-    def run_record(self, conclusion, status="completed", database_id=1):
-        return {"databaseId": database_id, "workflowName": "BLE Tests", "status": status, "conclusion": conclusion}
-
-    def test_failure_blocks_candidate(self):
-        result = self.gate([self.run_record("failure")])
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("withholding", result.stderr)
-
-    def test_pending_checks_cannot_publish(self):
-        result = self.gate([self.run_record("", status="queued")])
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Timed out", result.stderr)
-
-    def test_latest_successful_run_supersedes_older_failure(self):
-        result = self.gate([self.run_record("failure"), self.run_record("success", database_id=2)])
-        self.assertEqual(result.returncode, 0, result.stderr)
-
-
 class UpstreamSyncTests(unittest.TestCase):
     def test_sync_survives_previous_github_merge_commit(self):
         import yaml

@@ -32,6 +32,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  source-tests:
+    uses: ./.github/workflows/test.yml
+  ble-tests:
+    uses: ./.github/workflows/ble-test.yml
+  nix-build:
+    uses: ./.github/workflows/nix-build.yml
+  docs:
+    uses: ./.github/workflows/doc-checks.yml
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -45,7 +53,7 @@ jobs:
             .github/workflows/prepare-beckon-candidate.yml \
             .github/workflows/release-beckon.yml \
             .github/workflows/check-upstream.yml
-          shellcheck beckon/scripts/build-west.sh beckon/scripts/publish-candidate.sh beckon/scripts/wait-for-ci.sh
+          shellcheck beckon/scripts/build-west.sh beckon/scripts/publish-candidate.sh
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
@@ -96,12 +104,11 @@ jobs:
 
   candidate:
     if: github.event_name == 'push' && github.ref == 'refs/heads/beckon/main'
-    needs: build
+    needs: [build, source-tests, ble-tests, nix-build, docs]
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
       contents: write
-      actions: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
@@ -115,5 +122,4 @@ jobs:
           BECKON_NOTIFY_USER: ${{ vars.BECKON_NOTIFY_USER || github.repository_owner }}
         run: |
           python3 beckon/scripts/candidate.py candidate "$RELEASE_TAG" "$RELEASE_TAG-rc.$GITHUB_RUN_ID"
-          ./beckon/scripts/wait-for-ci.sh "$(jq -er .commit candidate/candidate.json)"
           ./beckon/scripts/publish-candidate.sh candidate

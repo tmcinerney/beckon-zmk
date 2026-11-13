@@ -1,6 +1,7 @@
 name: Docs Checks
 
 on:
+  workflow_call:
   push:
     paths:
       - ".github/workflows/doc-checks.yml"

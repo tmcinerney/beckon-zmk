@@ -21,9 +21,10 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
@@ -38,4 +39,5 @@ jobs:
           BECKON_NOTIFY_USER: ${{ vars.BECKON_NOTIFY_USER || github.repository_owner }}
         run: |
           python3 beckon/scripts/candidate.py candidate "$RELEASE_TAG" "$CANDIDATE_TAG"
+          ./beckon/scripts/wait-for-ci.sh "$(jq -er .commit candidate/candidate.json)"
           ./beckon/scripts/publish-candidate.sh candidate

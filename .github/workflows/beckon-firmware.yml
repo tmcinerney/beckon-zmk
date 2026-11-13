@@ -45,7 +45,7 @@ jobs:
             .github/workflows/prepare-beckon-candidate.yml \
             .github/workflows/release-beckon.yml \
             .github/workflows/check-upstream.yml
-          shellcheck beckon/scripts/build-west.sh beckon/scripts/publish-candidate.sh
+          shellcheck beckon/scripts/build-west.sh beckon/scripts/publish-candidate.sh beckon/scripts/wait-for-ci.sh
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
@@ -54,7 +54,9 @@ jobs:
           python -m pip install pre-commit
           pre-commit run --show-diff-on-failure --all-files
       - name: Test candidate packaging and publish failures
-        run: python3 -m unittest discover -s beckon/tests -p 'test_release.py' -v
+        run: |
+          python3 -m pip install west==1.3.0
+          python3 -m unittest discover -s beckon/tests -p 'test_release.py' -v
 
   build:
     needs: checks
@@ -96,9 +98,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/beckon/main'
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 25
     permissions:
       contents: write
+      actions: read
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
@@ -112,4 +115,5 @@ jobs:
           BECKON_NOTIFY_USER: ${{ vars.BECKON_NOTIFY_USER || github.repository_owner }}
         run: |
           python3 beckon/scripts/candidate.py candidate "$RELEASE_TAG" "$RELEASE_TAG-rc.$GITHUB_RUN_ID"
+          ./beckon/scripts/wait-for-ci.sh "$(jq -er .commit candidate/candidate.json)"
           ./beckon/scripts/publish-candidate.sh candidate

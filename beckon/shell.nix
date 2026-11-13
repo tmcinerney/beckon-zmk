@@ -3,6 +3,6 @@
 pkgs.mkShell {
   nativeBuildInputs = with pkgs; [
     bash clang coreutils jq actionlint shellcheck pre-commit
-    (python3.withPackages (ps: [ ps.pyyaml ]))
+    (python3.withPackages (ps: [ ps.pyyaml ps.west ]))
   ];
 }

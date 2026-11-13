@@ -38,5 +38,5 @@ cat beckon/lh-build.log beckon/rh-build.log > beckon/build.log
 ./beckon/tests/test-checks.sh
 ./beckon/tests/check-raw-hid-usb-only.sh build/beckon-lh
 ./beckon/tests/check-memory.sh beckon/build.log
-west manifest --freeze > beckon/west-frozen.yml
+python3 beckon/scripts/freeze-dependencies.py > beckon/west-frozen.yml
 printf '{"commit": "%s"}\n' "$(git rev-parse HEAD)" > beckon/source.json

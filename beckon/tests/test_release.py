@@ -100,5 +100,66 @@ if args[:1] == ['api'] and '/commits/' in args[1] and not args[1].endswith('/com
         self.assertLess(create, notify)
 
 
+class FrozenDependencyTests(unittest.TestCase):
+    def test_uncloned_inactive_dependency_does_not_break_release(self):
+        from west.manifest import Manifest
+        freeze_spec = importlib.util.spec_from_file_location("freeze", ROOT / "beckon/scripts/freeze-dependencies.py")
+        module = importlib.util.module_from_spec(freeze_spec)
+        freeze_spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            active = root / "active"
+            active.mkdir()
+            subprocess.run(["git", "init", "-q", str(active)], check=True)
+            subprocess.run(["git", "-C", str(active), "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-q", "--allow-empty", "-m", "fixture"], check=True)
+            sha = subprocess.check_output(["git", "-C", str(active), "rev-parse", "HEAD"], text=True).strip()
+            (root / ".west").mkdir()
+            (root / ".west/config").write_text("[manifest]\npath = app\n")
+            (root / "app").mkdir()
+            manifest_file = root / "app/west.yml"
+            manifest_file.write_text(json.dumps({"manifest": {
+                "group-filter": ["-optional"],
+                "projects": [
+                    {"name": "active", "url": "https://example.invalid/active", "revision": "main"},
+                    {"name": "chre", "url": "https://example.invalid/chre", "groups": ["optional"]},
+                ],
+            }}))
+            manifest = Manifest(topdir=directory)
+            projects = module.freeze(manifest)["manifest"]["projects"]
+            self.assertEqual([(p["name"], p["revision"]) for p in projects], [("active", sha)])
+            manifest_file.write_text(json.dumps({"manifest": {"projects": [{"name": "missing", "url": "https://example.invalid/missing"}]}}))
+            manifest = Manifest(topdir=directory)
+            with self.assertRaisesRegex(ValueError, "active dependency is not cloned"):
+                module.freeze(manifest)
+
+
+class CIGateTests(unittest.TestCase):
+    def gate(self, runs):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            mock = root / "gh"
+            mock.write_text("#!/usr/bin/env python3\nimport os\nprint(os.environ['GH_RUNS'])\n")
+            mock.chmod(0o755)
+            env = dict(os.environ, PATH=directory + os.pathsep + os.environ["PATH"], GITHUB_REPOSITORY="test/firmware", GH_RUNS=json.dumps(runs), BECKON_CI_ATTEMPTS="1", BECKON_CI_INTERVAL_SECONDS="0")
+            return subprocess.run(["bash", str(ROOT / "beckon/scripts/wait-for-ci.sh"), "a" * 40], env=env, capture_output=True, text=True)
+
+    def run_record(self, conclusion, status="completed", database_id=1):
+        return {"databaseId": database_id, "workflowName": "BLE Tests", "status": status, "conclusion": conclusion}
+
+    def test_failure_blocks_candidate(self):
+        result = self.gate([self.run_record("failure")])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("withholding", result.stderr)
+
+    def test_pending_checks_cannot_publish(self):
+        result = self.gate([self.run_record("", status="queued")])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Timed out", result.stderr)
+
+    def test_latest_successful_run_supersedes_older_failure(self):
+        result = self.gate([self.run_record("failure"), self.run_record("success", database_id=2)])
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

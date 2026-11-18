@@ -187,19 +187,23 @@ brightness safety limit.
 
 ## Upstream updates
 
-`main` is an upstream mirror. `beckon/main` contains Beckon-specific commits.
-The weekly **Check MoErgo upstream** job opens a PR only when `upstream/main`
-has advanced. After reviewing and merging it:
+The weekly **Check MoErgo upstream** job merges MoErgo's `main` into
+`beckon/main` on a branch and opens a PR only when upstream has advanced. It
+then starts the Beckon firmware build on that branch, so the PR shows whether
+the firmware still builds and passes its checks. Merging the PR publishes a
+firmware candidate as usual.
 
-```sh
-git switch beckon/main
-git merge main
-git push
-```
+Run a physical smoke test after every upstream merge. A merge conflict fails the
+job instead of opening a PR: that is a signal that the RGB port needs an
+intentional update, not something an automation should guess through. Resolve
+it by hand on a branch from `beckon/main`.
 
-Run the firmware CI and a physical smoke test after every upstream merge. A conflict is
-useful signal that the RGB port needs an intentional update, not something an
-automation should guess through.
+`main` is the old upstream mirror and is no longer updated by automation.
+Upstream ZMK's own CI and release workflows (release-please, stale, container
+builds, the all-boards build) are removed from `beckon/main`; the upstream
+test, BLE, Nix and docs workflows stay because the firmware build reuses them.
+If an upstream sync later edits one of the removed workflows, keep it deleted
+when resolving the conflict.
 
 ## One-time GitHub setup
 

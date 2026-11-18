@@ -17,12 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      actions: write
       contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: beckon/main
           fetch-depth: 0
       - name: Fetch MoErgo main
         run: |
@@ -33,7 +34,8 @@ jobs:
           git -c user.name='github-actions[bot]' \
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
             merge --no-edit upstream/main
-      - name: Propose upstream mirror update
+      - name: Propose upstream update for Beckon
+        id: proposal
         uses: peter-evans/create-pull-request@v7
         with:
           branch: automation/sync-moergo-upstream
@@ -41,7 +43,14 @@ jobs:
           title: "chore: sync MoErgo upstream"
           commit-message: "chore: sync MoErgo upstream"
           body: |
-            Automated merge of MoErgo upstream into the mirror. Merge this first,
-            then merge `main` into `beckon/main`, run firmware CI, and physically test
-            both halves before making a release.
-          base: main
+            Automated merge of MoErgo upstream into `beckon/main`. The Beckon
+            firmware build runs on this branch automatically. Merging publishes a
+            firmware candidate; physically test both halves before promoting it.
+          base: beckon/main
+      # PRs opened with the default token do not trigger pull_request workflows,
+      # so start the firmware build on the proposal branch explicitly.
+      - name: Build firmware for the proposal
+        if: steps.proposal.outputs.pull-request-operation == 'created' || steps.proposal.outputs.pull-request-operation == 'updated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run beckon-firmware.yml --repo "$GITHUB_REPOSITORY" --ref automation/sync-moergo-upstream
